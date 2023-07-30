@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolControls.WinUI3.Controls">
+
+    <Style TargetType="local:OpacityMaskView">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="OpacityMask" Value="#FFFFFFFF" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:OpacityMaskView">
+                    <Grid x:Name="LayoutRoot">
+                        <Canvas x:Name="OpacityMaskContainer" Width="0" Height="0">
+                            <Rectangle x:Name="OpacityMaskHost" Fill="{TemplateBinding OpacityMask}" />
+                        </Canvas>
+                        <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <Border x:Name="ChildOpacityBorder">
+                                <Border x:Name="ChildBorder" Child="{TemplateBinding Child}"/>
+                            </Border>
+                            <Canvas x:Name="ChildHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        </Grid>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

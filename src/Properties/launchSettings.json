@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CoolControls.WinUI3 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "CoolControls.WinUI3 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
