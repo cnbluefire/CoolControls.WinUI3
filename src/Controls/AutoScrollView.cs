@@ -20,7 +20,6 @@ namespace CoolControls.WinUI3.Controls
 
             propSet = compositor.CreatePropertySet();
             propSet.InsertScalar(nameof(Spacing), (float)Spacing);
-            propSet.InsertScalar("Speed", (float)ScrollingPixelsPreSecond);
 
             visual1 = compositor.CreateSpriteVisual();
             visual1.Brush = ChildVisualBrush;
@@ -49,10 +48,6 @@ namespace CoolControls.WinUI3.Controls
             animation.IterationBehavior = AnimationIterationBehavior.Forever;
             animation.SetReferenceParameter("propSet", propSet);
 
-            offsetAnimationPlaybackRateBind = compositor.CreateExpressionAnimation("propSet.Speed / visual.Size.X");
-            offsetAnimationPlaybackRateBind.SetReferenceParameter("visual", visual1);
-            offsetAnimationPlaybackRateBind.SetReferenceParameter("propSet", propSet);
-
             this.Loaded += AutoScrollView_Loaded;
         }
 
@@ -69,9 +64,6 @@ namespace CoolControls.WinUI3.Controls
 
         private LinearEasingFunction linearEasingFunc;
         private ScalarKeyFrameAnimation animation;
-
-        private AnimationController? offsetAnimationController;
-        private ExpressionAnimation offsetAnimationPlaybackRateBind;
 
         protected override bool ChildVisualBrushOffsetEnabled => false;
 
@@ -122,9 +114,9 @@ namespace CoolControls.WinUI3.Controls
                 if (s is AutoScrollView sender && !Equals(a.NewValue, a.OldValue))
                 {
                     var value = Convert.ToSingle(a.NewValue);
-                    if (value <= 0) throw new ArgumentException("Speed");
+                    if (value <= 0) throw new ArgumentException(nameof(ScrollingPixelsPreSecondProperty));
 
-                    sender.propSet.InsertScalar("Speed", value);
+                    sender.UpdateAnimationSpeed();
                 }
             }));
 
@@ -156,6 +148,7 @@ namespace CoolControls.WinUI3.Controls
                 animation.SetReferenceParameter("visual", childVisual);
                 animation.SetReferenceParameter("visual2", rootVisual);
                 animation.SetReferenceParameter("propSet", propSet);
+                animation.Duration = TimeSpan.FromSeconds(ChildPresenter.ActualWidth / ScrollingPixelsPreSecond);
 
                 visual1.StartAnimation("Offset", offsetBind1);
                 visual1.StartAnimation("Size", sizeBind);
@@ -163,24 +156,12 @@ namespace CoolControls.WinUI3.Controls
                 visual2.StartAnimation("Size", sizeBind);
 
                 RootVisual.StartAnimation("Offset.X", animation);
-
-                offsetAnimationController = RootVisual.TryGetAnimationController("Offset.X");
-                if (offsetAnimationController != null)
-                {
-                    offsetAnimationController.StartAnimation("PlaybackRate", offsetAnimationPlaybackRateBind);
-                }
             }
         }
 
         protected override void OnDetachVisuals()
         {
             base.OnDetachVisuals();
-
-            if (offsetAnimationController != null)
-            {
-                offsetAnimationController.StopAnimation("PlaybackRate");
-                offsetAnimationController = null;
-            }
 
             visual1.StopAnimation("Offset");
             visual1.StopAnimation("Size");
@@ -224,6 +205,35 @@ namespace CoolControls.WinUI3.Controls
             else
             {
                 RedirectVisualEnabled = false;
+            }
+        }
+
+        private void UpdateAnimationSpeed()
+        {
+            if (RedirectVisualAttached && ChildPresenter != null)
+            {
+                var progress = 0f;
+                var animationController = RootVisual.TryGetAnimationController("Offset.X");
+                if (animationController != null)
+                {
+                    animationController.Pause();
+                    progress = animationController.Progress;
+                }
+                RootVisual.StopAnimation("Offset.X");
+
+                animation.Duration = TimeSpan.FromSeconds(ChildPresenter.ActualWidth / ScrollingPixelsPreSecond);
+                RootVisual.StartAnimation("Offset.X", animation);
+
+                if (progress > 0)
+                {
+                    animationController = RootVisual.TryGetAnimationController("Offset.X");
+                    if (animationController != null)
+                    {
+                        animationController.Pause();
+                        animationController.Progress = progress;
+                        animationController.Resume();
+                    }
+                }
             }
         }
     }
