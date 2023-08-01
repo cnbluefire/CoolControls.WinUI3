@@ -13,8 +13,9 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Remove="Controls\OpacityMaskView.xaml" />
 		<None Remove="Themes\Generic.xaml" />
+		<None Remove="Views\AutoScrollViewPage.xaml" />
+		<None Remove="Views\OpacityMaskViewPage.xaml" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -42,7 +43,7 @@
 		<ProjectCapability Include="Msix" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Page Update="Controls\OpacityMaskView.xaml">
+	  <Page Update="Views\AutoScrollViewPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </Page>
 	</ItemGroup>
@@ -50,6 +51,11 @@
 		<Page Update="Themes\Generic.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</Page>
+	</ItemGroup>
+	<ItemGroup>
+	  <Page Update="Views\OpacityMaskViewPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
 	</ItemGroup>
 
 	<!-- 

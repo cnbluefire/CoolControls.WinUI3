@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="CoolControls.WinUI3.Views.AutoScrollViewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolControls.WinUI3.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:control="using:CoolControls.WinUI3.Controls"
+    mc:Ignorable="d">
+
+    <Grid>
+        <ScrollViewer>
+            <StackPanel Margin="40,20,20,20">
+                <StackPanel.Resources>
+                    <x:String x:Key="TextForTest1">合抱之木，生于毫末；九层之台，起于累土；千里之行，始于足下。为者败之，执者失之。</x:String>
+                    <x:String x:Key="TextForTest2">反者，道之动；弱者，道之用。天下万物生于有，有生于无。</x:String>
+                    <x:String x:Key="TextForTest3">故失道而后德，失德而后仁，失仁而后义，失义而后礼。夫礼者，忠信之薄而乱之首。前识者，道之华而愚之始。</x:String>
+                    <x:String x:Key="TextForTest4">是以圣人处无为之事，行不言之教，万物作焉而不辞，生而不有，为而不恃，功成而弗居。夫唯弗居，是以不去。</x:String>
+                </StackPanel.Resources>
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="AutoScrollView" />
+
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="TextBlock" Margin="0,20,0,0" />
+                <control:AutoScrollView IsPlaying="{x:Bind MyToggleButton.IsChecked.Value,Mode=OneWay}" Margin="0,20">
+                    <TextBlock Text="{StaticResource TextForTest1}" TextTrimming="None" />
+                </control:AutoScrollView>
+
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Button Content" Margin="0,20,0,0" />
+                <ToggleButton x:Name="MyToggleButton" MaxWidth="150" IsChecked="True" Padding="0,5,0,6" Margin="0,20">
+                    <control:AutoScrollView IsPlaying="{x:Bind MyToggleButton.IsChecked.Value,Mode=OneWay}" Padding="11,0">
+                        <TextBlock Text="{StaticResource TextForTest2}" TextTrimming="None" />
+                    </control:AutoScrollView>
+                </ToggleButton>
+
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Run Fast" Margin="0,20,0,0" />
+                <control:AutoScrollView IsPlaying="{x:Bind MyToggleButton.IsChecked.Value,Mode=OneWay}" ScrollingPixelsPreSecond="200" Margin="0,20">
+                    <TextBlock Text="{StaticResource TextForTest3}" TextTrimming="None" />
+                </control:AutoScrollView>
+
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="With OpacityMaskView" Margin="0,20,0,0" />
+                <control:OpacityMaskView>
+                    <control:OpacityMaskView.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Offset="0" Color="Transparent" />
+                            <GradientStop Offset="0.02" Color="#FFFFFFFF" />
+                            <GradientStop Offset="0.98" Color="#FFFFFFFF" />
+                            <GradientStop Offset="1" Color="Transparent" />
+                        </LinearGradientBrush>
+                    </control:OpacityMaskView.OpacityMask>
+                    <control:AutoScrollView IsPlaying="{x:Bind MyToggleButton.IsChecked.Value,Mode=OneWay}" Padding="10,0" Margin="0,20">
+                        <TextBlock Text="{StaticResource TextForTest4}" TextTrimming="None" />
+                    </control:AutoScrollView>
+                </control:OpacityMaskView>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

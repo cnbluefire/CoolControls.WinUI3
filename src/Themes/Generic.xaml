@@ -4,6 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:CoolControls.WinUI3.Themes">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/Controls/OpacityMaskView.xaml" />
+        <ResourceDictionary Source="/Controls/RedirectVisualView.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

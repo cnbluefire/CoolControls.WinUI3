@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="CoolControls.WinUI3.Views.OpacityMaskViewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolControls.WinUI3.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:control="using:CoolControls.WinUI3.Controls"
+    mc:Ignorable="d">
+
+    <Grid>
+        <ScrollViewer>
+            <StackPanel Margin="40,20,20,20">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="OpacityViewMask" />
+                <control:AutoScrollView Margin="0,20,0,0">
+                    <TextBlock Text="http://schemas.microsoft.com/expression/blend/2008" TextTrimming="None" />
+                </control:AutoScrollView>
+                <control:OpacityMaskView HorizontalAlignment="Left" 
+                                         VerticalAlignment="Center" 
+                                         Margin="0,20"
+                                         Padding="0"
+                                         MaxHeight="500">
+                    <control:OpacityMaskView.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1" MappingMode="RelativeToBoundingBox">
+                            <GradientStop Offset="0" Color="#00FFFFFF" />
+                            <GradientStop Offset="0.05" Color="#00FFFFFF" />
+                            <GradientStop Offset="0.25" Color="#FFFFFFFF" />
+                            <GradientStop Offset="0.55" Color="#FFFFFFFF" />
+                            <GradientStop Offset="0.95" Color="#00FFFFFF" />
+                            <GradientStop Offset="1" Color="#00FFFFFF" />
+                        </LinearGradientBrush>
+                    </control:OpacityMaskView.OpacityMask>
+                    <Image Source="http://e0.ifengimg.com/03/2019/0116/4520E55BB546CF6D7F295FB28A2A205B598BD5EC_size554_w1228_h1842.jpeg" Stretch="Uniform"/>
+                </control:OpacityMaskView>
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="EffectButton" />
+                <control:OpacityMaskView HorizontalAlignment="Left"
+                                         VerticalAlignment="Center"
+                                         Margin="0,20">
+                    <control:OpacityMaskView.Resources>
+                        <Storyboard x:Name="EffectButtonAnimation" Duration="0:0:1.5">
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop1" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop2" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop5" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop6" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop2" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.4" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.4" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop3" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.3" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.3" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.1" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop4" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.25" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.25" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.15" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop5" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.15" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.15" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.25" />
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </control:OpacityMaskView.Resources>
+                    <control:OpacityMaskView.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0.2" EndPoint="1,0.8" MappingMode="RelativeToBoundingBox">
+                            <GradientStop x:Name="Stop1" Offset="-1" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop2" Offset="-0.4" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop3" Offset="-0.3" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop4" Offset="-0.25" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop5" Offset="-0.15" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop6" Offset="2" Color="#FFFFFFFF" />
+                        </LinearGradientBrush>
+                    </control:OpacityMaskView.OpacityMask>
+                    <Button Height="36" Content="This is a Button" Click="Button_Click" />
+                </control:OpacityMaskView>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

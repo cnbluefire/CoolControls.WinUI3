@@ -11,18 +11,17 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.UI;
 
 namespace CoolControls.WinUI3.Controls
 {
-    [ContentProperty(Name = nameof(Child))]
-    public class OpacityMaskView : Control
+    public class OpacityMaskView : RedirectVisualView
     {
         public OpacityMaskView()
         {
-            this.DefaultStyleKey = typeof(OpacityMaskView);
+            opacityMaskHost = new Rectangle();
 
-            hostVisual = ElementCompositionPreview.GetElementVisual(this);
-            compositor = hostVisual.Compositor;
+            compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
 
             opacityMaskVisualSurface = compositor.CreateVisualSurface();
             opacityMaskVisualBrush = compositor.CreateSurfaceBrush(opacityMaskVisualSurface);
@@ -30,61 +29,22 @@ namespace CoolControls.WinUI3.Controls
             opacityMaskVisualBrush.VerticalAlignmentRatio = 0;
             opacityMaskVisualBrush.Stretch = CompositionStretch.None;
 
-            childVisualSurface = compositor.CreateVisualSurface();
-            childVisualBrush = compositor.CreateSurfaceBrush(childVisualSurface);
-            childVisualBrush.HorizontalAlignmentRatio = 0;
-            childVisualBrush.VerticalAlignmentRatio = 0;
-            childVisualBrush.Stretch = CompositionStretch.None;
-
             maskBrush = compositor.CreateMaskBrush();
             maskBrush.Mask = opacityMaskVisualBrush;
-            maskBrush.Source = childVisualBrush;
+            maskBrush.Source = ChildVisualBrush;
 
-            redirectVisual = compositor.CreateSpriteVisual();
-            redirectVisual.RelativeSizeAdjustment = Vector2.One;
-            redirectVisual.Brush = maskBrush;
+            RootVisual.Brush = maskBrush;
         }
 
-        private Grid? LayoutRoot;
-        private Rectangle? OpacityMaskHost;
-        private Border? ChildBorder;
-        private Border? ChildOpacityBorder;
-        private Canvas? ChildHost;
-        private Canvas? OpacityMaskContainer;
+        private Rectangle opacityMaskHost;
 
-        private Visual hostVisual;
         private Compositor compositor;
 
         private CompositionVisualSurface opacityMaskVisualSurface;
         private CompositionSurfaceBrush opacityMaskVisualBrush;
-
-        private CompositionVisualSurface childVisualSurface;
-        private CompositionSurfaceBrush childVisualBrush;
-
         private CompositionMaskBrush maskBrush;
-        private SpriteVisual redirectVisual;
 
-        protected override void OnApplyTemplate()
-        {
-            base.OnApplyTemplate();
-
-            DetachVisuals();
-
-            LayoutRoot = GetTemplateChild(nameof(LayoutRoot)) as Grid;
-            OpacityMaskHost = GetTemplateChild(nameof(OpacityMaskHost)) as Rectangle;
-            ChildBorder = GetTemplateChild(nameof(ChildBorder)) as Border;
-            ChildOpacityBorder = GetTemplateChild(nameof(ChildOpacityBorder)) as Border;
-            ChildHost = GetTemplateChild(nameof(ChildHost)) as Canvas;
-            OpacityMaskContainer = GetTemplateChild(nameof(OpacityMaskContainer)) as Canvas;
-
-            AttachVisuals();
-        }
-
-        public UIElement? Child
-        {
-            get { return (UIElement?)GetValue(ChildProperty); }
-            set { SetValue(ChildProperty, value); }
-        }
+        protected override bool ChildVisualBrushOffsetEnabled => true;
 
         public Brush? OpacityMask
         {
@@ -92,94 +52,79 @@ namespace CoolControls.WinUI3.Controls
             set { SetValue(OpacityMaskProperty, value); }
         }
 
-        public static readonly DependencyProperty ChildProperty =
-            DependencyProperty.Register("Child", typeof(UIElement), typeof(OpacityMaskView), new PropertyMetadata(null));
-
         public static readonly DependencyProperty OpacityMaskProperty =
-            DependencyProperty.Register("OpacityMask", typeof(Brush), typeof(OpacityMaskView), new PropertyMetadata(null));
+            DependencyProperty.Register("OpacityMask", typeof(Brush), typeof(OpacityMaskView), new PropertyMetadata(new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)), OnOpacityMaskPropertyChanged));
 
-        private void DetachVisuals()
+        private static void OnOpacityMaskPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (LayoutRoot != null)
+            if (d is OpacityMaskView sender && !Equals(e.NewValue, e.OldValue))
             {
-                opacityMaskVisualSurface.SourceVisual = null;
-                childVisualSurface.SourceVisual = null;
-
-                LayoutRoot.SizeChanged -= LayoutRoot_SizeChanged;
-
-                if (ChildBorder != null)
+                if (sender.RedirectVisualAttached)
                 {
-                    ChildBorder.SizeChanged -= ChildBorder_SizeChanged;
+                    sender.opacityMaskHost.Fill = e.NewValue as Brush;
                 }
-
-                if (ChildHost != null)
+                else
                 {
-                    ElementCompositionPreview.SetElementChildVisual(ChildHost, null);
+                    sender.opacityMaskHost.Fill = null;
                 }
             }
         }
 
-        private void AttachVisuals()
+        protected override void OnDetachVisuals()
         {
+            base.OnDetachVisuals();
+
             if (LayoutRoot != null)
             {
-                LayoutRoot.SizeChanged += LayoutRoot_SizeChanged;
-
-                if (OpacityMaskHost != null)
+                if (opacityMaskHost != null)
                 {
-                    opacityMaskVisualSurface.SourceVisual = ElementCompositionPreview.GetElementVisual(OpacityMaskHost);
+                    opacityMaskHost.Fill = null;
                 }
 
-                if (ChildBorder != null)
-                {
-                    ChildBorder.SizeChanged += ChildBorder_SizeChanged;
-                    childVisualSurface.SourceVisual = ElementCompositionPreview.GetElementVisual(ChildBorder);
-                }
+                opacityMaskVisualSurface.SourceVisual = null;
 
-                if (ChildOpacityBorder != null)
-                {
-                    ElementCompositionPreview.GetElementVisual(ChildOpacityBorder).IsVisible = false;
-                }
                 if (OpacityMaskContainer != null)
                 {
-                    ElementCompositionPreview.GetElementVisual(OpacityMaskContainer).IsVisible = false;
+                    OpacityMaskContainer.Visibility = Visibility.Collapsed;
+                    OpacityMaskContainer.Children.Remove(opacityMaskHost);
                 }
-
-                if (ChildHost != null)
-                {
-                    ElementCompositionPreview.SetElementChildVisual(ChildHost, redirectVisual);
-                }
-
-                UpdateSize();
             }
         }
 
-        private void ChildBorder_SizeChanged(object sender, SizeChangedEventArgs e)
+        protected override void OnAttachVisuals()
         {
-            UpdateSize();
-        }
+            base.OnAttachVisuals();
 
-        private void LayoutRoot_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            UpdateSize();
-        }
-
-        private void UpdateSize()
-        {
             if (LayoutRoot != null)
             {
-                if (OpacityMaskHost != null)
+                if (opacityMaskHost != null)
                 {
-                    OpacityMaskHost.Width = LayoutRoot.ActualWidth;
-                    OpacityMaskHost.Height = LayoutRoot.ActualHeight;
+                    opacityMaskHost.Fill = OpacityMask;
+                    opacityMaskVisualSurface.SourceVisual = ElementCompositionPreview.GetElementVisual(opacityMaskHost);
+                }
+
+                if (OpacityMaskContainer != null)
+                {
+                    OpacityMaskContainer.Visibility = Visibility.Visible;
+                    ElementCompositionPreview.GetElementVisual(OpacityMaskContainer).IsVisible = false;
+                    OpacityMaskContainer.Children.Add(opacityMaskHost);
+                }
+            }
+        }
+
+        protected override void OnUpdateSize()
+        {
+            base.OnUpdateSize();
+
+            if (RedirectVisualAttached && LayoutRoot != null)
+            {
+                if (opacityMaskHost != null)
+                {
+                    opacityMaskHost.Width = LayoutRoot.ActualWidth;
+                    opacityMaskHost.Height = LayoutRoot.ActualHeight;
                 }
 
                 opacityMaskVisualSurface.SourceSize = new Vector2((float)LayoutRoot.ActualWidth, (float)LayoutRoot.ActualHeight);
-
-                if (ChildBorder != null)
-                {
-                    childVisualSurface.SourceSize = new Vector2((float)ChildBorder.ActualWidth, (float)ChildBorder.ActualHeight);
-                }
             }
         }
     }

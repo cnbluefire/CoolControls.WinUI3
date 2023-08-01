@@ -9,6 +9,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Other merged dictionaries here -->
+                <ResourceDictionary>
+                    <StaticResource x:Key="WindowCaptionBackground" ResourceKey="SystemControlTransparentBrush" />
+                    <StaticResource x:Key="WindowCaptionBackgroundDisabled" ResourceKey="SystemControlTransparentBrush" />
+                </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
             <!-- Other app resources here -->
         </ResourceDictionary>
