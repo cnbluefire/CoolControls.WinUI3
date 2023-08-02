@@ -27,8 +27,6 @@ namespace CoolControls.WinUI3.Controls
         private ContentPresenter? contentPresenter;
         private Visual? contentVisual;
 
-        private CancellationTokenSource? cts;
-
         private Compositor compositor;
         private CompositionPropertySet propSet;
         private Vector3KeyFrameAnimation translationAnimation1;
@@ -68,9 +66,9 @@ namespace CoolControls.WinUI3.Controls
                 }
             }));
 
-        private async void AssociatedObject_Loaded(object sender, RoutedEventArgs e)
+        private void AssociatedObject_Loaded(object sender, RoutedEventArgs e)
         {
-            await LoadContent();
+            LoadContent();
         }
 
         private void AssociatedObject_Unloaded(object sender, RoutedEventArgs e)
@@ -78,23 +76,12 @@ namespace CoolControls.WinUI3.Controls
             UnloadContent((ButtonBase)sender);
         }
 
-        private async Task LoadContent()
+        private void LoadContent()
         {
-            cts?.Cancel();
-            var _cts = new CancellationTokenSource();
-            cts = _cts;
+            if (attached) return;
 
+            if (AssociatedObject?.IsLoaded is not true) return;
             var button = AssociatedObject;
-
-            bool loaded = false;
-
-            try
-            {
-                loaded = await WaitForLoaded(button, _cts.Token);
-            }
-            catch (OperationCanceledException) { }
-
-            if (!loaded) return;
 
             paddingChangedEventToken = button.RegisterPropertyChangedCallback(Control.PaddingProperty, OnPaddingPropertyChanged);
             visualStateGroup = VisualStateManager.GetVisualStateGroups((FrameworkElement)VisualTreeHelper.GetChild(button, 0)).FirstOrDefault(c => c.Name == "CommonStates");
@@ -125,8 +112,7 @@ namespace CoolControls.WinUI3.Controls
 
         private void UnloadContent(ButtonBase button)
         {
-            cts?.Cancel();
-            cts = null;
+            if (!attached) return;
 
             attached = false;
 
@@ -155,25 +141,19 @@ namespace CoolControls.WinUI3.Controls
             propSet.InsertVector3("Offset", Vector3.Zero);
         }
 
-        protected override async void OnAttached()
+        protected override void OnAttached()
         {
             base.OnAttached();
 
             AssociatedObject.Loaded += AssociatedObject_Loaded;
             AssociatedObject.Unloaded += AssociatedObject_Unloaded;
 
-            if (AssociatedObject.IsLoaded)
-            {
-                await LoadContent();
-            }
+            LoadContent();
         }
 
         protected override void OnDetaching()
         {
             base.OnDetaching();
-
-            cts?.Cancel();
-            cts = null;
 
             AssociatedObject.Loaded -= AssociatedObject_Loaded;
             AssociatedObject.Unloaded -= AssociatedObject_Unloaded;
@@ -284,16 +264,6 @@ namespace CoolControls.WinUI3.Controls
             }
 
             return null;
-        }
-
-        private static async Task<bool> WaitForLoaded(DependencyObject obj, CancellationToken cancellationToken)
-        {
-            do
-            {
-                if (obj is FrameworkElement ele && !ele.IsLoaded) return false;
-                if (VisualTreeHelper.GetChildrenCount(obj) > 0) return true;
-                await Task.Delay(50, cancellationToken);
-            } while (true);
         }
     }
 
