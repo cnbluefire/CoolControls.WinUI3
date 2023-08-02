@@ -53,6 +53,7 @@ namespace CoolControls.WinUI3
         {
             new NavigationItemModel("OpacityMaskView", "OpacityMaskView", typeof(OpacityMaskViewPage)),
             new NavigationItemModel("AutoScrollView", "AutoScrollView", typeof(AutoScrollViewPage)),
+            new NavigationItemModel("Behaviors", "Behaviors", typeof(BehaviorsPage)),
         });
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

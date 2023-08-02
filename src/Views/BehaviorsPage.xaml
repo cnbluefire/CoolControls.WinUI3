@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="CoolControls.WinUI3.Views.BehaviorsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolControls.WinUI3.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:behaviors="using:Microsoft.Xaml.Interactivity" 
+    xmlns:controls="using:CoolControls.WinUI3.Controls"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    
+    <Grid>
+        <ScrollViewer>
+            <StackPanel Margin="40,20,20,20">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Behaviors" />
+
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="ButtonContentSnapBehavior" Margin="0,20,0,0" />
+
+                <Button Padding="20,10" Margin="0,20,0,0" Content="Button">
+                    <Button.Resources>
+                        <StaticResource x:Key="ButtonBackground" ResourceKey="SystemControlTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SystemControlTransparentBrush" />
+                    </Button.Resources>
+                    <behaviors:Interaction.Behaviors>
+                        <controls:ButtonContentSnapBehavior SnapType="Left" />
+                    </behaviors:Interaction.Behaviors>
+                </Button>
+
+                <HyperlinkButton Padding="12,8" Margin="0,20,0,0">
+                    <behaviors:Interaction.Behaviors>
+                        <controls:ButtonContentSnapBehavior SnapType="Left" />
+                    </behaviors:Interaction.Behaviors>
+                    <HyperlinkButton.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="HYPERLINK BUTTON" FontSize="16" Margin="0,0,2,0" VerticalAlignment="Center" />
+                            <FontIcon Glyph="&#xE76C;" Foreground="{ThemeResource HyperlinkButtonForegroundPointerOver}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </HyperlinkButton.Content>
+                </HyperlinkButton>
+
+                <Button Margin="0,20,0,0" Content="Button">
+                    <Button.Resources>
+                        <StaticResource x:Key="ButtonBackground" ResourceKey="SystemControlTransparentBrush" />
+                        <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SystemControlTransparentBrush" />
+                    </Button.Resources>
+                    <behaviors:Interaction.Behaviors>
+                        <controls:ButtonContentSnapBehavior SnapType="Bottom" />
+                    </behaviors:Interaction.Behaviors>
+                </Button>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

@@ -12,7 +12,7 @@
     <Grid>
         <ScrollViewer>
             <StackPanel Margin="40,20,20,20">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="OpacityViewMask" />
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="OpacityMaskView" />
                 <control:AutoScrollView Margin="0,20,0,0">
                     <TextBlock Text="http://schemas.microsoft.com/expression/blend/2008" TextTrimming="None" />
                 </control:AutoScrollView>
