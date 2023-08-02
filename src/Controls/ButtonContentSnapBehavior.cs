@@ -75,7 +75,7 @@ namespace CoolControls.WinUI3.Controls
 
         private void AssociatedObject_Unloaded(object sender, RoutedEventArgs e)
         {
-            UnloadContent();
+            UnloadContent((ButtonBase)sender);
         }
 
         private async Task LoadContent()
@@ -123,14 +123,13 @@ namespace CoolControls.WinUI3.Controls
             UpdateSnapType();
         }
 
-        private void UnloadContent()
+        private void UnloadContent(ButtonBase button)
         {
             cts?.Cancel();
             cts = null;
 
             attached = false;
 
-            var button = AssociatedObject;
             button.UnregisterPropertyChangedCallback(Control.PaddingProperty, paddingChangedEventToken);
             paddingChangedEventToken = 0;
 
@@ -179,7 +178,7 @@ namespace CoolControls.WinUI3.Controls
             AssociatedObject.Loaded -= AssociatedObject_Loaded;
             AssociatedObject.Unloaded -= AssociatedObject_Unloaded;
 
-            UnloadContent();
+            UnloadContent(AssociatedObject);
         }
 
         private void OnPaddingPropertyChanged(DependencyObject sender, DependencyProperty dp)

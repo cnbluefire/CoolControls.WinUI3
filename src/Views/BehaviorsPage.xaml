@@ -28,7 +28,7 @@
                     </behaviors:Interaction.Behaviors>
                 </Button>
 
-                <HyperlinkButton Padding="12,8" Margin="0,20,0,0">
+                <HyperlinkButton Padding="12,8" Margin="0,20,0,0" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}">
                     <behaviors:Interaction.Behaviors>
                         <controls:ButtonContentSnapBehavior SnapType="Left" />
                     </behaviors:Interaction.Behaviors>
