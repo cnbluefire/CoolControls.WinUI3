@@ -44,8 +44,6 @@ namespace CoolControls.WinUI3.Controls
         private CompositionSurfaceBrush opacityMaskVisualBrush;
         private CompositionMaskBrush maskBrush;
 
-        protected override bool ChildVisualBrushOffsetEnabled => true;
-
         public Brush? OpacityMask
         {
             get { return (Brush?)GetValue(OpacityMaskProperty); }

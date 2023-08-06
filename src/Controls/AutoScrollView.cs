@@ -48,6 +48,8 @@ namespace CoolControls.WinUI3.Controls
             animation.IterationBehavior = AnimationIterationBehavior.Forever;
             animation.SetReferenceParameter("propSet", propSet);
 
+            MeasureChildInBoundingBox = IsPlaying;
+
             this.Loaded += AutoScrollView_Loaded;
         }
 
@@ -185,6 +187,8 @@ namespace CoolControls.WinUI3.Controls
 
         private void UpdateAnimationState()
         {
+            MeasureChildInBoundingBox = !IsPlaying;
+
             if (IsLoaded
                 && IsPlaying
                 && ChildPresenter != null

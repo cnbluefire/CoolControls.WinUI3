@@ -20,7 +20,7 @@ namespace CoolControls.WinUI3.Controls
         public RedirectVisualView()
         {
             this.DefaultStyleKey = typeof(RedirectVisualView);
-
+            
             childVisualBrushOffsetEnabled = ChildVisualBrushOffsetEnabled;
 
             hostVisual = ElementCompositionPreview.GetElementVisual(this);
@@ -46,7 +46,23 @@ namespace CoolControls.WinUI3.Controls
             RegisterPropertyChangedCallback(PaddingProperty, OnPaddingPropertyChanged);
         }
 
-        protected virtual bool ChildVisualBrushOffsetEnabled => false;
+        protected virtual bool ChildVisualBrushOffsetEnabled => true;
+
+
+        private bool measureChildInBoundingBox = true;
+
+        protected bool MeasureChildInBoundingBox
+        {
+            get => measureChildInBoundingBox;
+            set
+            {
+                if (measureChildInBoundingBox != value)
+                {
+                    measureChildInBoundingBox = value;
+                    UpdateMeasureChildInBoundingBox();
+                }
+            }
+        }
 
         protected bool RedirectVisualAttached => attached;
 
@@ -143,20 +159,7 @@ namespace CoolControls.WinUI3.Controls
                 {
                     childPresenterContainer = value;
 
-                    if (childPresenterContainer != null)
-                    {
-                        if (!childVisualBrushOffsetEnabled)
-                        {
-                            if (childPresenterContainer.RowDefinitions.Count > 0)
-                            {
-                                childPresenterContainer.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Auto);
-                            }
-                            if (childPresenterContainer.ColumnDefinitions.Count > 0)
-                            {
-                                childPresenterContainer.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Auto);
-                            }
-                        }
-                    }
+                    UpdateMeasureChildInBoundingBox();
                 }
             }
         }
@@ -329,6 +332,25 @@ namespace CoolControls.WinUI3.Controls
             }
 
             OnUpdateSize();
+        }
+
+        private void UpdateMeasureChildInBoundingBox()
+        {
+            if (ChildPresenterContainer != null)
+            {
+                var value = MeasureChildInBoundingBox;
+
+                var length = new GridLength(1, value ? GridUnitType.Star : GridUnitType.Auto);
+
+                if (ChildPresenterContainer.RowDefinitions.Count > 0)
+                {
+                    ChildPresenterContainer.RowDefinitions[0].Height = length;
+                }
+                if (ChildPresenterContainer.ColumnDefinitions.Count > 0)
+                {
+                    ChildPresenterContainer.ColumnDefinitions[0].Width = length;
+                }
+            }
         }
 
         protected virtual void OnAttachVisuals()
