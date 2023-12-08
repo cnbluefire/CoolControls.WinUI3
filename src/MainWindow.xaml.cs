@@ -46,7 +46,7 @@ namespace CoolControls.WinUI3
             this.SetTitleBar(TitleBarGrid);
 
             var dpi = GetDpiForWindow(Win32Interop.GetWindowFromWindowId(AppWindow.Id));
-            this.AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(800 * dpi / 96), (int)(600 * dpi / 96)));
+            this.AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(800 * dpi / 96), (int)(800 * dpi / 96)));
         }
 
         private IReadOnlyList<NavigationItemModel> NavigationItems => (navigationItems ??= new List<NavigationItemModel>()
@@ -54,6 +54,7 @@ namespace CoolControls.WinUI3
             new NavigationItemModel("OpacityMaskView", "OpacityMaskView", typeof(OpacityMaskViewPage)),
             new NavigationItemModel("AutoScrollView", "AutoScrollView", typeof(AutoScrollViewPage)),
             new NavigationItemModel("Behaviors", "Behaviors", typeof(BehaviorsPage)),
+            new NavigationItemModel("RibbedGlassView", "RibbedGlassView", typeof(RibbedGlassViewPage)),
         });
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

@@ -13,9 +13,6 @@
         <ScrollViewer>
             <StackPanel Margin="40,20,20,20">
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="OpacityMaskView" />
-                <control:AutoScrollView Margin="0,20,0,0">
-                    <TextBlock Text="http://schemas.microsoft.com/expression/blend/2008" TextTrimming="None" />
-                </control:AutoScrollView>
                 <control:OpacityMaskView HorizontalAlignment="Left" 
                                          VerticalAlignment="Center" 
                                          Margin="0,20"
@@ -67,7 +64,7 @@
                                 <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
                                 <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
                             </ColorAnimationUsingKeyFrames>
-                            
+
                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop2" Storyboard.TargetProperty="Offset"
                                                            Duration="0:0:1.25" EnableDependentAnimation="True">
                                 <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.4" />
