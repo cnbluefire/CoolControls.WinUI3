@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -24,6 +25,8 @@ namespace CoolControls.WinUI3.Controls
         private static System.Collections.Concurrent.ConcurrentBag<ChildVisualEntry>? childVisualPool;
 
         private bool disposedValue;
+        private DisposableCollector disposables = new DisposableCollector();
+
         private Compositor compositor;
         private float blurAmount = 2;
 
@@ -166,7 +169,8 @@ namespace CoolControls.WinUI3.Controls
             nameof(blurAmountBind))]
         private void EnsurePropertiesAndBindings()
         {
-            propSet = compositor.CreatePropertySet();
+            propSet = compositor.CreatePropertySet()
+                .TraceDisposable(disposables);
             propSet.InsertScalar(nameof(SourceVisualScale), 0.25f);
             propSet.InsertScalar(nameof(ChildVisualWidth), 18f);
             propSet.InsertScalar(nameof(BlurAmount), blurAmount);
@@ -176,33 +180,43 @@ namespace CoolControls.WinUI3.Controls
             propSet.InsertVector2("ChildVisualSize", Vector2.Zero);
             propSet.InsertScalar("VisualCount", 0f);
 
-            visualSizePropertyBind = compositor.CreateExpressionAnimation("visual.Size");
+            visualSizePropertyBind = compositor.CreateExpressionAnimation("visual.Size")
+                .TraceDisposable(disposables);
 
-            sourceVisualScalePropertyBind = compositor.CreateExpressionAnimation("Matrix3x2.CreateFromScale(Vector2(this.Target.SourceVisualScale, 1f))");
+            sourceVisualScalePropertyBind = compositor.CreateExpressionAnimation("Matrix3x2.CreateFromScale(Vector2(this.Target.SourceVisualScale, 1f))")
+                .TraceDisposable(disposables);
             propSet.StartAnimation("ContentTransform", sourceVisualScalePropertyBind);
 
-            childVisualSizePropertyBind = compositor.CreateExpressionAnimation("Vector2(this.Target.ChildVisualWidth + 1f, this.Target.SourceVisualSize.Y)");
+            childVisualSizePropertyBind = compositor.CreateExpressionAnimation("Vector2(this.Target.ChildVisualWidth + 1f, this.Target.SourceVisualSize.Y)")
+                .TraceDisposable(disposables);
             propSet.StartAnimation("ChildVisualSize", childVisualSizePropertyBind);
 
-            visualSizeBind = compositor.CreateExpressionAnimation("prop.SourceVisualSize");
+            visualSizeBind = compositor.CreateExpressionAnimation("prop.SourceVisualSize")
+                .TraceDisposable(disposables);
             visualSizeBind.SetReferenceParameter("prop", propSet);
 
-            childVisualSizeBind = compositor.CreateExpressionAnimation("prop.ChildVisualSize");
+            childVisualSizeBind = compositor.CreateExpressionAnimation("prop.ChildVisualSize")
+                .TraceDisposable(disposables);
             childVisualSizeBind.SetReferenceParameter("prop", propSet);
 
-            glassMaskSizeBind = compositor.CreateExpressionAnimation("Vector2(prop.ChildVisualWidth, 1)");
+            glassMaskSizeBind = compositor.CreateExpressionAnimation("Vector2(prop.ChildVisualWidth, 1)")
+                .TraceDisposable(disposables);
             glassMaskSizeBind.SetReferenceParameter("prop", propSet);
 
-            sourceVisualScaleBind = compositor.CreateExpressionAnimation("prop.ContentTransform");
+            sourceVisualScaleBind = compositor.CreateExpressionAnimation("prop.ContentTransform")
+                .TraceDisposable(disposables);
             sourceVisualScaleBind.SetReferenceParameter("prop", propSet);
 
-            childVisualOffsetBind = compositor.CreateExpressionAnimation("Vector3(this.Target._Index * prop.ChildVisualWidth, 0f, 0f)");
+            childVisualOffsetBind = compositor.CreateExpressionAnimation("Vector3(this.Target._Index * prop.ChildVisualWidth, 0f, 0f)")
+                .TraceDisposable(disposables);
             childVisualOffsetBind.SetReferenceParameter("prop", propSet);
 
-            childVisualBrushTransformBind = compositor.CreateExpressionAnimation("Matrix3x2.CreateFromTranslation(Vector2((prop.ChildVisualWidth / (1 - prop.SourceVisualScale) / prop.VisualCount - prop.ChildVisualWidth * prop.SourceVisualScale) * this.Target._Index, 0))");
+            childVisualBrushTransformBind = compositor.CreateExpressionAnimation("Matrix3x2.CreateFromTranslation(Vector2((prop.ChildVisualWidth / (1 - prop.SourceVisualScale) / prop.VisualCount - prop.ChildVisualWidth * prop.SourceVisualScale) * this.Target._Index, 0))")
+                .TraceDisposable(disposables);
             childVisualBrushTransformBind.SetReferenceParameter("prop", propSet);
 
-            blurAmountBind = compositor.CreateExpressionAnimation("prop.BlurAmount");
+            blurAmountBind = compositor.CreateExpressionAnimation("prop.BlurAmount")
+                .TraceDisposable(disposables);
             blurAmountBind.SetReferenceParameter("prop", propSet);
         }
 
@@ -211,11 +225,13 @@ namespace CoolControls.WinUI3.Controls
             nameof(sourceVisualSurfaceBrush))]
         private void EnsureSourceBrush()
         {
-            sourceVisualSurface = compositor.CreateVisualSurface();
+            sourceVisualSurface = compositor.CreateVisualSurface()
+                .TraceDisposable(disposables);
 
             sourceVisualSurface.StartAnimation("SourceSize", visualSizeBind);
 
-            sourceVisualSurfaceBrush = compositor.CreateSurfaceBrush(sourceVisualSurface);
+            sourceVisualSurfaceBrush = compositor.CreateSurfaceBrush(sourceVisualSurface)
+                .TraceDisposable(disposables);
             sourceVisualSurfaceBrush.Stretch = CompositionStretch.None;
             sourceVisualSurfaceBrush.HorizontalAlignmentRatio = 0;
             sourceVisualSurfaceBrush.VerticalAlignmentRatio = 0;
@@ -228,7 +244,7 @@ namespace CoolControls.WinUI3.Controls
             nameof(scaledContentSurface))]
         private void EnsureScaledContentSurface()
         {
-            scaledContentSurfaceVisual = compositor.CreateSpriteVisual();
+            scaledContentSurfaceVisual = compositor.CreateSpriteVisual().TraceDisposable(disposables);
             scaledContentSurfaceVisual.StartAnimation("Size", visualSizeBind);
 
             var transformEffect = new Transform2DEffect()
@@ -236,11 +252,11 @@ namespace CoolControls.WinUI3.Controls
                 Name = "TransformEffect",
                 Source = new CompositionEffectSourceParameter("source"),
                 TransformMatrix = Matrix3x2.Identity
-            };
+            }.TraceDisposable(disposables);
 
             scaledContentEffectBrush = compositor
-                .CreateEffectFactory(transformEffect, new[] { "TransformEffect.TransformMatrix" })
-                .CreateBrush();
+                .CreateEffectFactory(transformEffect, new[] { "TransformEffect.TransformMatrix" }).TraceDisposable(disposables)
+                .CreateBrush().TraceDisposable(disposables);
 
             scaledContentEffectBrush.SetSourceParameter("source", sourceVisualSurfaceBrush);
             scaledContentEffectBrush.Properties.StartAnimation("TransformEffect.TransformMatrix", sourceVisualScaleBind);
@@ -256,17 +272,18 @@ namespace CoolControls.WinUI3.Controls
                     Source = new CompositionEffectSourceParameter("source"),
                     TransformMatrix = Matrix3x2.Identity
                 }
-            };
+            }.TraceDisposable(disposables);
+
 
             scaledContentEffectBlurredBrush = compositor
-                .CreateEffectFactory(blurredEffect, new[] { "TransformEffect.TransformMatrix", "BlurEffect.BlurAmount" })
-                .CreateBrush();
+                .CreateEffectFactory(blurredEffect, new[] { "TransformEffect.TransformMatrix", "BlurEffect.BlurAmount" }).TraceDisposable(disposables)
+                .CreateBrush().TraceDisposable(disposables);
 
             scaledContentEffectBlurredBrush.SetSourceParameter("source", sourceVisualSurfaceBrush);
             scaledContentEffectBlurredBrush.Properties.StartAnimation("TransformEffect.TransformMatrix", sourceVisualScaleBind);
             scaledContentEffectBlurredBrush.Properties.StartAnimation("BlurEffect.BlurAmount", blurAmountBind);
 
-            scaledContentSurface = compositor.CreateVisualSurface();
+            scaledContentSurface = compositor.CreateVisualSurface().TraceDisposable(disposables);
             scaledContentSurface.SourceVisual = scaledContentSurfaceVisual;
             scaledContentSurface.StartAnimation("SourceSize", visualSizeBind);
 
@@ -278,11 +295,13 @@ namespace CoolControls.WinUI3.Controls
             nameof(childVisualsContainer))]
         private void EnsureVisualsContainer()
         {
-            rootChildVisual = compositor.CreateContainerVisual();
+            rootChildVisual = compositor.CreateContainerVisual()
+                .TraceDisposable(disposables);
             rootChildVisual.Clip = compositor.CreateInsetClip();
             rootChildVisual.StartAnimation("Size", visualSizeBind);
 
-            childVisualsContainer = compositor.CreateContainerVisual();
+            childVisualsContainer = compositor.CreateContainerVisual()
+                .TraceDisposable(disposables);
             childVisualsContainer.RelativeSizeAdjustment = Vector2.One;
 
             rootChildVisual.Children.InsertAtTop(childVisualsContainer);
@@ -295,7 +314,8 @@ namespace CoolControls.WinUI3.Controls
             nameof(glassMaskVisual))]
         private void EnsureGlassMaskVisual()
         {
-            glassMaskSurfaceVisual = compositor.CreateSpriteVisual();
+            glassMaskSurfaceVisual = compositor.CreateSpriteVisual()
+                .TraceDisposable(disposables);
             glassMaskSurfaceVisual.StartAnimation("Size", glassMaskSizeBind);
 
             var gradientBrush = compositor.CreateLinearGradientBrush();
@@ -310,11 +330,13 @@ namespace CoolControls.WinUI3.Controls
 
             glassMaskSurfaceVisual.Brush = gradientBrush;
 
-            glassMaskSurface = compositor.CreateVisualSurface();
+            glassMaskSurface = compositor.CreateVisualSurface()
+                .TraceDisposable(disposables);
             glassMaskSurface.SourceVisual = glassMaskSurfaceVisual;
             glassMaskSurface.StartAnimation("SourceSize", glassMaskSizeBind);
 
-            glassMaskBrush = compositor.CreateSurfaceBrush(glassMaskSurface);
+            glassMaskBrush = compositor.CreateSurfaceBrush(glassMaskSurface)
+                .TraceDisposable(disposables);
             glassMaskBrush.HorizontalAlignmentRatio = 0;
             glassMaskBrush.VerticalAlignmentRatio = 0;
             glassMaskBrush.Stretch = CompositionStretch.None;
@@ -324,10 +346,16 @@ namespace CoolControls.WinUI3.Controls
                 ExtendX = Microsoft.Graphics.Canvas.CanvasEdgeBehavior.Wrap,
                 ExtendY = Microsoft.Graphics.Canvas.CanvasEdgeBehavior.Clamp,
                 Source = new CompositionEffectSourceParameter("source"),
-            };
-            var maskTiledBrush = compositor.CreateEffectFactory(maskTileEffect).CreateBrush();
+            }.TraceDisposable(disposables);
+
+            var maskTiledBrush = compositor
+                .CreateEffectFactory(maskTileEffect).TraceDisposable(disposables)
+                .CreateBrush().TraceDisposable(disposables);
+
             maskTiledBrush.SetSourceParameter("source", glassMaskBrush);
-            glassMaskVisual = compositor.CreateSpriteVisual();
+
+            glassMaskVisual = compositor.CreateSpriteVisual()
+                .TraceDisposable(disposables);
             glassMaskVisual.StartAnimation("Size", visualSizeBind);
             glassMaskVisual.Brush = maskTiledBrush;
         }
@@ -425,72 +453,27 @@ namespace CoolControls.WinUI3.Controls
                     disposedValue = true;
 
                     rootChildVisual?.Children.RemoveAll();
-                    rootChildVisual?.Dispose();
-                    rootChildVisual = null!;
-
                     childVisualsContainer?.Children.RemoveAll();
-                    childVisualsContainer?.Dispose();
-                    childVisualsContainer = null!;
 
-                    glassMaskVisual?.Dispose();
-                    glassMaskVisual = null!;
-                    glassMaskSurfaceVisual?.Dispose();
-                    glassMaskSurfaceVisual = null!;
-                    glassMaskSurface?.Dispose();
-                    glassMaskSurface = null!;
-                    glassMaskBrush?.Dispose();
-                    glassMaskBrush = null!;
-
-                    scaledContentSurface?.Dispose();
-                    scaledContentSurface = null!;
-                    scaledContentSurfaceVisual?.Dispose();
-                    scaledContentSurfaceVisual = null!;
-                    scaledContentEffectBrush?.Dispose();
-                    scaledContentEffectBrush = null!;
-                    scaledContentEffectBlurredBrush?.Dispose();
-                    scaledContentEffectBlurredBrush = null!;
-
-                    sourceVisualSurfaceBrush?.Dispose();
-                    sourceVisualSurfaceBrush = null!;
-                    sourceVisualSurface?.Dispose();
-                    sourceVisualSurface = null!;
-
-                    sourceVisualScalePropertyBind?.Dispose();
-                    sourceVisualScalePropertyBind = null!;
-                    visualSizePropertyBind?.Dispose();
-                    visualSizePropertyBind = null!;
-                    childVisualSizePropertyBind?.Dispose();
-                    childVisualSizePropertyBind = null!;
-                    visualSizeBind?.Dispose();
-                    visualSizeBind = null!;
-                    childVisualSizeBind?.Dispose();
-                    childVisualSizeBind = null!;
-                    sourceVisualScaleBind?.Dispose();
-                    sourceVisualScaleBind = null!;
-                    childVisualOffsetBind?.Dispose();
-                    childVisualOffsetBind = null!;
-                    childVisualBrushTransformBind?.Dispose();
-                    childVisualBrushTransformBind = null!;
-                    glassMaskSizeBind?.Dispose();
-                    glassMaskSizeBind = null!;
-                    blurAmountBind?.Dispose();
-                    blurAmountBind = null!;
-
-                    propSet?.Dispose();
-                    propSet = null!;
+                    disposables.Dispose();
+                    disposables = null!;
 
                     if (_instanceCount == 0)
                     {
                         if (childVisualPool != null)
                         {
-                            var arr = childVisualPool.ToArray();
-                            childVisualPool = null;
+                            var pool = Interlocked.Exchange(ref childVisualPool, null);
+
                             if (disposing)
                             {
-
-                                for (int i = 0; i < arr.Length; i++)
+                                if (pool != null)
                                 {
-                                    arr[i].Dispose();
+                                    var arr = pool.ToArray();
+
+                                    for (int i = 0; i < arr.Length; i++)
+                                    {
+                                        arr[i].Dispose();
+                                    }
                                 }
                             }
                         }
@@ -584,5 +567,125 @@ namespace CoolControls.WinUI3.Controls
                 GC.SuppressFinalize(this);
             }
         }
+
+        private class DisposableCollector : IDisposable, ICollection<IDisposable>
+        {
+            private bool disposedValue;
+
+            private List<IDisposable>? objects = new List<IDisposable>();
+
+            public int Count
+            {
+                get
+                {
+                    ThrowIfDisposed();
+
+                    return objects!.Count;
+                }
+            }
+
+            public bool IsReadOnly => false;
+
+            public void Add(IDisposable obj)
+            {
+                ThrowIfDisposed();
+
+                if (obj != null)
+                {
+                    objects!.Add(obj);
+                }
+            }
+
+            public bool Remove(IDisposable obj)
+            {
+                ThrowIfDisposed();
+
+                if (obj != null)
+                {
+                    return objects!.Remove(obj);
+                }
+
+                return false;
+            }
+
+            private void ThrowIfDisposed()
+            {
+                if (disposedValue) throw new ObjectDisposedException(nameof(DisposableCollector));
+            }
+
+            public void Clear()
+            {
+                ThrowIfDisposed();
+                objects!.Clear();
+            }
+
+            public bool Contains(IDisposable item)
+            {
+                ThrowIfDisposed();
+                return objects!.Contains(item);
+            }
+
+            public void CopyTo(IDisposable[] array, int arrayIndex)
+            {
+                ThrowIfDisposed();
+                objects!.CopyTo(array, arrayIndex);
+            }
+
+            public IEnumerator<IDisposable> GetEnumerator()
+            {
+                ThrowIfDisposed();
+                return objects!.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                ThrowIfDisposed();
+                return ((IEnumerable)objects!).GetEnumerator();
+
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    disposedValue = true;
+
+                    var objects = Interlocked.Exchange(ref this.objects, null);
+
+                    if (objects != null)
+                    {
+                        for (int i = objects.Count - 1; i >= 0; i--)
+                        {
+                            try
+                            {
+                                objects[i].Dispose();
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+                Dispose(disposing: true);
+                GC.SuppressFinalize(this);
+            }
+        }
+    }
+
+    file static class DisposableExtensions
+    {
+        [return: NotNullIfNotNull(nameof(obj))]
+        internal static T? TraceDisposable<T>(this T? obj, ICollection<IDisposable>? disposableCollector) where T : class, IDisposable
+        {
+            if (obj != null && disposableCollector != null)
+            {
+                disposableCollector.Add(obj);
+            }
+
+            return obj;
+        }
+
     }
 }

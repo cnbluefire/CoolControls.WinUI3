@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.UI;
 
@@ -17,8 +18,6 @@ namespace CoolControls.WinUI3.Controls
     [ContentProperty(Name = "Child")]
     internal class RibbedGlassView : Control
     {
-        private const float DefaultContentScale = 0.25f;
-
         public RibbedGlassView()
         {
             this.DefaultStyleKey = typeof(RibbedGlassView);
@@ -100,7 +99,11 @@ namespace CoolControls.WinUI3.Controls
             {
                 if (s is RibbedGlassView sender && !Equals(a.NewValue, a.OldValue))
                 {
-                    sender.EnsureHelper().ChildVisualWidth = Convert.ToSingle(a.NewValue);
+                    var helper = sender.helper;
+                    if (helper != null)
+                    {
+                        helper.ChildVisualWidth = Convert.ToSingle(a.NewValue);
+                    }
                     sender.UpdateEffects();
                 }
             }));
@@ -116,24 +119,11 @@ namespace CoolControls.WinUI3.Controls
             {
                 if (s is RibbedGlassView sender && !Equals(a.NewValue, a.OldValue))
                 {
-                    sender.EnsureHelper().SourceVisualScale = Convert.ToSingle(a.NewValue);
-                    sender.UpdateEffects();
-                }
-            }));
-
-
-
-        public bool IsEffectEnabled
-        {
-            get { return (bool)GetValue(IsEffectEnabledProperty); }
-            set { SetValue(IsEffectEnabledProperty, value); }
-        }
-
-        public static readonly DependencyProperty IsEffectEnabledProperty =
-            DependencyProperty.Register("IsEffectEnabled", typeof(bool), typeof(RibbedGlassView), new PropertyMetadata(true, (s, a) =>
-            {
-                if (s is RibbedGlassView sender && !Equals(a.NewValue, a.OldValue))
-                {
+                    var helper = sender.helper;
+                    if (helper != null)
+                    {
+                        helper.SourceVisualScale = Convert.ToSingle(a.NewValue);
+                    }
                     sender.UpdateEffects();
                 }
             }));
@@ -151,10 +141,36 @@ namespace CoolControls.WinUI3.Controls
             {
                 if (s is RibbedGlassView sender && !Equals(a.NewValue, a.OldValue))
                 {
-                    sender.EnsureHelper().BlurAmount = Convert.ToSingle(a.NewValue);
+                    var helper = sender.helper;
+                    if (helper != null)
+                    {
+                        helper.BlurAmount = Convert.ToSingle(a.NewValue);
+                    }
                     sender.UpdateEffects();
                 }
             }));
+
+
+        public bool IsEffectEnabled
+        {
+            get { return (bool)GetValue(IsEffectEnabledProperty); }
+            set { SetValue(IsEffectEnabledProperty, value); }
+        }
+
+        public static readonly DependencyProperty IsEffectEnabledProperty =
+            DependencyProperty.Register("IsEffectEnabled", typeof(bool), typeof(RibbedGlassView), new PropertyMetadata(true, (s, a) =>
+            {
+                if (s is RibbedGlassView sender && !Equals(a.NewValue, a.OldValue))
+                {
+                    sender.UpdateEffects();
+                    if (!(bool)a.NewValue)
+                    {
+                        var helper = Interlocked.Exchange(ref sender.helper, null);
+                        helper?.Dispose();
+                    }
+                }
+            }));
+
 
         private void UpdateEffects()
         {
@@ -222,6 +238,11 @@ namespace CoolControls.WinUI3.Controls
         private void RibbedGlassVisual_Unloaded(object sender, RoutedEventArgs e)
         {
             UpdateEffects();
+            if (!IsLoaded)
+            {
+                var helper = Interlocked.Exchange(ref this.helper, null);
+                helper?.Dispose();
+            }
         }
 
         private void ContentBorder_SizeChanged(object sender, SizeChangedEventArgs e)
