@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="CoolControls.WinUI3.Views.StrokedTextPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CoolControls.WinUI3.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:control="using:CoolControls.WinUI3.Controls"
+    mc:Ignorable="d">
+
+    <Grid x:Name="LayoutRoot">
+        <ScrollViewer>
+            <StackPanel Margin="40,20,20,20">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Stroked Text" />
+                
+                <control:TextBlockStrokeView Margin="0,20">
+                    <control:TextBlockStrokeView.Resources>
+                        <Storyboard x:Name="EffectBrushAnimation" Duration="0:0:1.5" SpeedRatio="0.4" RepeatBehavior="Forever">
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop1" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop2" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop5" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop6" Storyboard.TargetProperty="Color"
+                                                          Duration="0:0:1.5" EnableDependentAnimation="True">
+                                <LinearColorKeyFrame KeyTime="0" Value="#FFFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:0.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.25" Value="#0FFFFFFF" />
+                                <LinearColorKeyFrame KeyTime="0:0:1.5" Value="#FFFFFFFF" />
+                            </ColorAnimationUsingKeyFrames>
+
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop2" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.4" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.4" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop3" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.3" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.3" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.1" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop4" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.25" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.25" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.15" />
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Stop5" Storyboard.TargetProperty="Offset"
+                                                           Duration="0:0:1.25" EnableDependentAnimation="True">
+                                <DiscreteDoubleKeyFrame KeyTime="0" Value="-0.15" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-0.15" />
+                                <LinearDoubleKeyFrame KeyTime="0:0:1.25" Value="1.25" />
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </control:TextBlockStrokeView.Resources>
+                    <control:TextBlockStrokeView.StrokeBrush>
+                        <LinearGradientBrush StartPoint="0,0.2" EndPoint="1,0.8" MappingMode="RelativeToBoundingBox">
+                            <GradientStop x:Name="Stop1" Offset="-1" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop2" Offset="-0.4" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop3" Offset="-0.3" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop4" Offset="-0.25" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop5" Offset="-0.15" Color="#FFFFFFFF" />
+                            <GradientStop x:Name="Stop6" Offset="2" Color="#FFFFFFFF" />
+                        </LinearGradientBrush>
+                    </control:TextBlockStrokeView.StrokeBrush>
+                    <TextBlock FontSize="24" FontWeight="Bold" TextWrapping="Wrap"
+                               Text="天下皆知美之为美，斯恶已；皆知善之为善，斯不善已。故有无相生，难易相成，长短相形，高下相倾，音声相和，前后相随。"/>
+                </control:TextBlockStrokeView>
+                
+                <control:TextBlockStrokeView Margin="0,20">
+                    <control:TextBlockStrokeView.StrokeBrush>
+                        <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#CCFF0000" Offset="0" />
+                            <GradientStop Color="#CC0000FF" Offset="1" />
+                        </LinearGradientBrush>
+                    </control:TextBlockStrokeView.StrokeBrush>
+                    <TextBlock FontSize="24" FontWeight="Bold" TextWrapping="Wrap"
+                               Text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec vestibulum id ex nec malesuada. Duis tristique elit vitae justo lobortis, id fermentum tellus tristique. Duis in volutpat augue, a blandit enim. Suspendisse a dolor tempor, commodo metus sit amet, venenatis orci. Phasellus eu nulla in eros vestibulum pharetra ut at dolor. Praesent dapibus leo et neque egestas aliquam. Aenean ex erat, pretium eu tincidunt et, commodo quis lectus. Cras vitae sapien sed sem eleifend hendrerit. Suspendisse dignissim egestas neque vitae sodales. Nullam dapibus a ligula a pellentesque."/>
+                </control:TextBlockStrokeView>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

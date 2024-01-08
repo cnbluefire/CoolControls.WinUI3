@@ -55,6 +55,7 @@ namespace CoolControls.WinUI3
             new NavigationItemModel("AutoScrollView", "AutoScrollView", typeof(AutoScrollViewPage)),
             new NavigationItemModel("Behaviors", "Behaviors", typeof(BehaviorsPage)),
             new NavigationItemModel("RibbedGlassView", "RibbedGlassView", typeof(RibbedGlassViewPage)),
+            new NavigationItemModel("StrokedText", "Stroked Text", typeof(StrokedTextPage)),
         });
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
