@@ -22,12 +22,12 @@ namespace CoolControls.WinUI3.Controls
         {
             this.DefaultStyleKey = typeof(TextBlockStrokeView);
 
-            BrushHost = new Rectangle()
+            brushHost = new Rectangle()
             {
                 Fill = StrokeBrush
             };
 
-            BrushHostCanvas = new Canvas()
+            brushHostCanvas = new Canvas()
             {
                 Width = 0,
                 Height = 0,
@@ -35,21 +35,35 @@ namespace CoolControls.WinUI3.Controls
                 IsHitTestVisible = false,
                 Children =
                 {
-                    BrushHost
+                    brushHost
                 }
             };
 
-            BrushHostCanvas.GetVisualInternal().IsVisible = false;
+            brushHostCanvas.GetVisualInternal().IsVisible = false;
+
+            var brushHostVisual = brushHost.GetVisualInternal();
+
+            var compositor = brushHostVisual.Compositor;
+
+            brushHostVisualSurface = compositor.CreateVisualSurface();
+            brushHostVisualSurface.SourceVisual = brushHostVisual;
+
+            actualStrokeBrush = compositor.CreateSurfaceBrush(brushHostVisualSurface);
+
+            sizeBind = compositor.CreateExpressionAnimation("visual.Size");
+            sizeBind.SetReferenceParameter("visual", brushHostVisual);
+            brushHostVisualSurface.StartAnimation("SourceSize", sizeBind);
         }
 
-        private Canvas BrushHostCanvas;
-        private Rectangle BrushHost;
+        private Canvas brushHostCanvas;
+        private Rectangle brushHost;
+        private CompositionVisualSurface brushHostVisualSurface;
+        private CompositionSurfaceBrush actualStrokeBrush;
+        private ExpressionAnimation sizeBind;
+
         private Grid? LayoutRoot;
         private Border? TextBlockBorder;
-        private TextBlockStrokeImpl? textBlockStroke;
-
-        private CompositionVisualSurface? brushHostVisualSurface;
-        private CompositionSurfaceBrush? actualStrokeBrush;
+        private TextBlockStrokeHelper? textBlockStroke;
 
         protected override void OnApplyTemplate()
         {
@@ -57,31 +71,17 @@ namespace CoolControls.WinUI3.Controls
 
             DisconnectStrokeVisual();
 
-            if (brushHostVisualSurface != null)
-            {
-                brushHostVisualSurface.SourceVisual = null;
-            }
             if (TextBlockBorder != null)
             {
                 TextBlockBorder.SizeChanged -= TextBlockBorder_SizeChanged;
             }
             if (LayoutRoot != null)
             {
-                LayoutRoot.Children.Remove(BrushHostCanvas);
+                LayoutRoot.Children.Remove(brushHostCanvas);
             }
 
             LayoutRoot = (Grid)GetTemplateChild(nameof(LayoutRoot));
             TextBlockBorder = (Border)GetTemplateChild(nameof(TextBlockBorder));
-
-            if (brushHostVisualSurface == null)
-            {
-                brushHostVisualSurface = Utils.Graphics.DeviceHolder.Instance.Compositor.CreateVisualSurface();
-            }
-            if (actualStrokeBrush == null)
-            {
-                actualStrokeBrush = Utils.Graphics.DeviceHolder.Instance.Compositor.CreateSurfaceBrush(brushHostVisualSurface);
-            }
-            brushHostVisualSurface.SourceVisual = BrushHost.GetVisualInternal();
 
             if (TextBlockBorder != null)
             {
@@ -90,7 +90,7 @@ namespace CoolControls.WinUI3.Controls
             }
             if (LayoutRoot != null)
             {
-                LayoutRoot.Children.Add(BrushHostCanvas);
+                LayoutRoot.Children.Add(brushHostCanvas);
             }
 
             ConnectStrokeVisual();
@@ -107,7 +107,7 @@ namespace CoolControls.WinUI3.Controls
             {
                 if (s is TextBlockStrokeView sender && !Equals(a.NewValue, a.OldValue))
                 {
-                    sender.BrushHost.Fill = a.NewValue as Brush;
+                    sender.brushHost.Fill = a.NewValue as Brush;
                 }
             }));
 
@@ -120,7 +120,7 @@ namespace CoolControls.WinUI3.Controls
         }
 
         public static readonly DependencyProperty StrokeThicknessProperty =
-            DependencyProperty.Register("StrokeThickness", typeof(double), typeof(TextBlockStrokeView), new PropertyMetadata(2d, (s, a) =>
+            DependencyProperty.Register("StrokeThickness", typeof(double), typeof(TextBlockStrokeView), new PropertyMetadata(0d, (s, a) =>
             {
                 if (s is TextBlockStrokeView sender && !Equals(a.NewValue, a.OldValue))
                 {
@@ -148,15 +148,13 @@ namespace CoolControls.WinUI3.Controls
 
                     if (sender.textBlockStroke != null)
                     {
-                        sender.textBlockStroke.UpdatePreviewRequest -= sender.TextBlockStroke_UpdatePreviewRequest;
                         sender.textBlockStroke?.Dispose();
                         sender.textBlockStroke = null;
                     }
 
                     if (a.NewValue is TextBlock textBlock)
                     {
-                        sender.textBlockStroke = new TextBlockStrokeImpl(textBlock, Utils.Graphics.DeviceHolder.Instance);
-                        sender.textBlockStroke.UpdatePreviewRequest += sender.TextBlockStroke_UpdatePreviewRequest;
+                        sender.textBlockStroke = new TextBlockStrokeHelper(textBlock);
                     }
 
                     sender.ConnectStrokeVisual();
@@ -165,26 +163,13 @@ namespace CoolControls.WinUI3.Controls
 
         private void TextBlockBorder_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateBrushHostSize(e.NewSize.Width, e.NewSize.Height);
+            UpdateBrushHostSize(e.NewSize.Width + TextBlockStrokeHelper.padding * 2, e.NewSize.Height + TextBlockStrokeHelper.padding * 2);
         }
 
         private void UpdateBrushHostSize(double width, double height)
         {
-            if (BrushHost != null)
-            {
-                BrushHost.Width = width;
-                BrushHost.Height = height;
-            }
-
-            if (brushHostVisualSurface != null)
-            {
-                brushHostVisualSurface.SourceSize = new System.Numerics.Vector2((float)width, (float)height);
-            }
-        }
-
-        private async void TextBlockStroke_UpdatePreviewRequest(object? sender, EventArgs e)
-        {
-            await ((TextBlockStrokeImpl)sender!).UpdatePreviewAsync(TextBlockBorder);
+            brushHost.Width = width;
+            brushHost.Height = height;
         }
 
         private void ConnectStrokeVisual()
@@ -193,10 +178,7 @@ namespace CoolControls.WinUI3.Controls
 
             ElementCompositionPreview.SetElementChildVisual(TextBlockBorder, textBlockStroke.StrokeVisual);
 
-            if (actualStrokeBrush != null)
-            {
-                textBlockStroke.StrokeBrush = actualStrokeBrush;
-            }
+            textBlockStroke.StrokeBrush = actualStrokeBrush;
             textBlockStroke.StrokeThickness = (float)StrokeThickness;
         }
 

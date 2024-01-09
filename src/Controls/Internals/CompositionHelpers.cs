@@ -103,12 +103,6 @@ namespace CoolControls.WinUI3.Controls.Internals
                 }
 
                 visualSurface?.Dispose();
-
-
-
-
-                //redirectVisual?.Dispose();
-                //containerVisual?.Dispose();
             }
         }
 
