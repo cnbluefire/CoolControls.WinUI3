@@ -29,6 +29,7 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
         private bool disposedValue;
         private WeakReference<TextBlock> weakTextBlock;
         private TextBlockProperties textBlockProps;
+        private float strokeThickness = 2f;
         private int drawSessionId;
         private int updateSessionId;
 
@@ -40,9 +41,11 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
         private CompositionSurfaceBrush? strokeBrush;
         private CompositionMaskBrush? maskBrush;
         private CompositionVirtualDrawingSurface? compositionStrokeSurface;
+        private ExpressionAnimation? textVisibleExpression;
         private ExpressionAnimation? strokeVisibleExpression;
         private ExpressionAnimation? previewVisibleExpression;
         private CompositionBrush? strokeFillBrush;
+        private CompositionPropertySet propSet;
 
         internal TextBlockStrokeImpl(TextBlock textBlock, DeviceHolder deviceHolder)
         {
@@ -77,6 +80,9 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
             rootVisual = deviceHolder.Compositor.CreateContainerVisual();
             rootVisual.Children.InsertAtTop(changingPreviewVisual);
             rootVisual.Children.InsertAtTop(strokeVisual);
+
+            propSet = deviceHolder.Compositor.CreatePropertySet();
+            propSet.InsertScalar("StrokeThickness", strokeThickness);
         }
 
         internal CompositionBrush? StrokeBrush
@@ -91,7 +97,25 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
                     if (maskBrush != null)
                     {
                         maskBrush.Source = value;
+
+                        UpdateStroke(true);
                     }
+                }
+            }
+        }
+
+        internal float StrokeThickness
+        {
+            get => strokeThickness;
+            set
+            {
+                if (strokeThickness != value)
+                {
+                    if (value < 0) throw new ArgumentException(nameof(StrokeThickness));
+                    strokeThickness = value;
+                    propSet.InsertScalar("StrokeThickness", strokeThickness);
+
+                    UpdateStroke(true);
                 }
             }
         }
@@ -197,7 +221,7 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
 
         private async Task DrawStrokeAsync(TextBlock textBlock, TextBlockProperties textBlockProps, long drawSessionId)
         {
-            if (textBlock.IsLoaded)
+            if (textBlock.IsLoaded && strokeFillBrush != null && strokeThickness > 0)
             {
                 var actualWidth = textBlockProps.ActualWidth;
                 var actualHeight = textBlockProps.ActualHeight;
@@ -266,21 +290,32 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
 
             var textBlockVisual = textBlock.GetVisualInternal();
 
+            if (textVisibleExpression == null)
+            {
+                textVisibleExpression = compositor.CreateExpressionAnimation($"abs(strokeVisual.Size.X - visual.Size.X - {padding * 2}) + abs(strokeVisual.Size.Y - visual.Size.Y - {padding * 2}) <= 5 || propSet.StrokeThickness == 0 ? 1 : 0");
+                textVisibleExpression.SetReferenceParameter("strokeVisual", strokeVisual);
+                textVisibleExpression.SetReferenceParameter("visual", textBlockVisual);
+                textVisibleExpression.SetReferenceParameter("propSet", propSet);
+
+                textBlockVisual.StartAnimation("Opacity", textVisibleExpression);
+            }
+
             if (strokeVisibleExpression == null)
             {
-                strokeVisibleExpression = compositor.CreateExpressionAnimation($"abs(strokeVisual.Size.X - visual.Size.X - {padding * 2}) + abs(strokeVisual.Size.Y - visual.Size.Y - {padding * 2}) <= 5 ? 1 : 0");
+                strokeVisibleExpression = compositor.CreateExpressionAnimation($"abs(strokeVisual.Size.X - visual.Size.X - {padding * 2}) + abs(strokeVisual.Size.Y - visual.Size.Y - {padding * 2}) <= 5 && propSet.StrokeThickness > 0 ? 1 : 0");
                 strokeVisibleExpression.SetReferenceParameter("strokeVisual", strokeVisual);
                 strokeVisibleExpression.SetReferenceParameter("visual", textBlockVisual);
+                strokeVisibleExpression.SetReferenceParameter("propSet", propSet);
 
                 strokeVisual.StartAnimation("Opacity", strokeVisibleExpression);
-                textBlockVisual.StartAnimation("Opacity", strokeVisibleExpression);
             }
 
             if (previewVisibleExpression == null)
             {
-                previewVisibleExpression = compositor.CreateExpressionAnimation($"abs(strokeVisual.Size.X - visual.Size.X - {padding * 2}) + abs(strokeVisual.Size.Y - visual.Size.Y - {padding * 2}) <= 5 ? 0 : 1");
+                previewVisibleExpression = compositor.CreateExpressionAnimation($"abs(strokeVisual.Size.X - visual.Size.X - {padding * 2}) + abs(strokeVisual.Size.Y - visual.Size.Y - {padding * 2}) <= 5 || propSet.StrokeThickness == 0 ? 0 : 1");
                 previewVisibleExpression.SetReferenceParameter("strokeVisual", strokeVisual);
                 previewVisibleExpression.SetReferenceParameter("visual", textBlockVisual);
+                previewVisibleExpression.SetReferenceParameter("propSet", propSet);
 
                 changingPreviewVisual.StartAnimation("Opacity", previewVisibleExpression);
             }
@@ -300,54 +335,7 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
                 {
                     ds.Clear(Color.FromArgb(0, 255, 255, 255));
 
-                    using var effect1 = new ColorMatrixEffect()
-                    {
-                        ColorMatrix = new Matrix5x4()
-                        {
-
-#pragma warning disable format 
-
-                            M11 = 0, M12 = 0, M13 = 0, M14 = 0,
-                            M21 = 0, M22 = 0, M23 = 0, M24 = 0,
-                            M31 = 0, M32 = 0, M33 = 0, M34 = 0,
-                            M41 = 1, M42 = 1, M43 = 1, M44 = 0,
-                            M51 = 0, M52 = 0, M53 = 0, M54 = 1
-
-#pragma warning restore format 
-
-                        },
-                        Source = canvasBitmap,
-                    };
-
-                    using var effect2 = new EdgeDetectionEffect()
-                    {
-                        Amount = 0.08f,
-                        BlurAmount = 0f,
-                        OverlayEdges = false,
-                        Source = effect1,
-                        Mode = EdgeDetectionEffectMode.Sobel
-                    };
-
-                    using var effect3 = new ColorMatrixEffect()
-                    {
-                        ColorMatrix = new Matrix5x4()
-                        {
-
-#pragma warning disable format 
-
-                            M11 = 0, M12 = 0, M13 = 0, M14 = 1,
-                            M21 = 0, M22 = 0, M23 = 0, M24 = 0,
-                            M31 = 0, M32 = 0, M33 = 0, M34 = 0,
-                            M41 = 0, M42 = 0, M43 = 0, M44 = 0,
-                            M51 = 0, M52 = 0, M53 = 0, M54 = 0
-
-#pragma warning restore format 
-
-                        },
-                        Source = effect2,
-                    };
-
-                    ds.DrawImage(effect3, padding, padding);
+                    DrawEffect(ds, canvasBitmap);
                 }
 
                 strokeBrush.Scale = new Vector2(1 / scale, 1 / scale);
@@ -355,6 +343,114 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
                 UpdatePreviewRequest?.Invoke(this, EventArgs.Empty);
             }
         }
+
+        private void DrawEffect(CanvasDrawingSession ds, CanvasBitmap canvasBitmap)
+        {
+            var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
+            if (strokeThickness < 3.5f)
+            {
+                DrawEffectSmallSize(ds, canvasBitmap);
+            }
+            else
+            {
+                DrawEffectLargeSize(ds, canvasBitmap);
+            }
+
+            var duration = System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp);
+            System.Diagnostics.Debug.WriteLine("DrawEffect duration: {0}", duration);
+        }
+
+        private void DrawEffectSmallSize(CanvasDrawingSession ds, CanvasBitmap canvasBitmap)
+        {
+            var thicknessIntPart = (int)strokeThickness;
+            var thicknessFloatPart = strokeThickness - thicknessIntPart;
+
+            using (var commandList = new CanvasCommandList(ds))
+            {
+                using (var tmpDs = commandList.CreateDrawingSession())
+                {
+                    tmpDs.DrawImage(canvasBitmap, 0, 0);
+                    for (float i = 0; i < thicknessIntPart; i += 0.5f)
+                    {
+                        DrawImageRound(tmpDs, canvasBitmap, i);
+                    }
+
+                    if (thicknessFloatPart >= 0.1f)
+                    {
+                        DrawImageRound(tmpDs, canvasBitmap, thicknessFloatPart);
+                    }
+                }
+
+                using var effect = new CompositeEffect()
+                {
+                    Mode = CanvasComposite.DestinationOut,
+                    Sources =
+                    {
+                        commandList,
+                        canvasBitmap
+                    }
+                };
+
+                ds.DrawImage(effect, padding, padding);
+            }
+
+            static void DrawImageRound(CanvasDrawingSession _ds, CanvasBitmap _canvasBitmap, float _offset)
+            {
+                _ds.DrawImage(_canvasBitmap, -_offset, -_offset);
+                _ds.DrawImage(_canvasBitmap, 0, -_offset);
+                _ds.DrawImage(_canvasBitmap, _offset, -_offset);
+                _ds.DrawImage(_canvasBitmap, -_offset, 0);
+                _ds.DrawImage(_canvasBitmap, _offset, 0);
+                _ds.DrawImage(_canvasBitmap, -_offset, _offset);
+                _ds.DrawImage(_canvasBitmap, 0, _offset);
+                _ds.DrawImage(_canvasBitmap, _offset, _offset);
+            }
+        }
+
+        private void DrawEffectLargeSize(CanvasDrawingSession ds, CanvasBitmap canvasBitmap)
+        {
+            var blurAmount = strokeThickness;
+
+            using var effect1 = new ShadowEffect()
+            {
+                ShadowColor = Color.FromArgb(255, 0, 0, 0),
+                BlurAmount = blurAmount,
+                Source = canvasBitmap,
+            };
+
+            using var effect2 = new ColorMatrixEffect
+            {
+                ColorMatrix = new Matrix5x4
+                {
+
+#pragma warning disable format
+
+                    M11 = 1, M12 = 0, M13 = 0, M14 = 0,
+                    M21 = 0, M22 = 1, M23 = 0, M24 = 0,
+                    M31 = 0, M32 = 0, M33 = 1, M34 = 0,
+                    M41 = 0, M42 = 0, M43 = 0, M44 = 20f,
+                    M51 = 0, M52 = 0, M53 = 0, M54 = -2
+
+#pragma warning disable format 
+                },
+
+                Source = effect1,
+            };
+
+            using var effect3 = new CompositeEffect()
+            {
+                Mode = CanvasComposite.DestinationOut,
+                Sources =
+                {
+                    effect2,
+                    canvasBitmap
+                }
+            };
+
+            ds.DrawImage(effect3, padding, padding);
+        }
+
 
         public void Dispose()
         {

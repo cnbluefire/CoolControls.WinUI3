@@ -111,6 +111,28 @@ namespace CoolControls.WinUI3.Controls
                 }
             }));
 
+
+
+        public double StrokeThickness
+        {
+            get { return (double)GetValue(StrokeThicknessProperty); }
+            set { SetValue(StrokeThicknessProperty, value); }
+        }
+
+        public static readonly DependencyProperty StrokeThicknessProperty =
+            DependencyProperty.Register("StrokeThickness", typeof(double), typeof(TextBlockStrokeView), new PropertyMetadata(2d, (s, a) =>
+            {
+                if (s is TextBlockStrokeView sender && !Equals(a.NewValue, a.OldValue))
+                {
+                    if (sender.textBlockStroke != null)
+                    {
+                        sender.textBlockStroke.StrokeThickness = Convert.ToSingle(a.NewValue);
+                    }
+                }
+            }));
+
+
+
         public TextBlock TextBlock
         {
             get { return (TextBlock)GetValue(TextBlockProperty); }
@@ -175,6 +197,7 @@ namespace CoolControls.WinUI3.Controls
             {
                 textBlockStroke.StrokeBrush = actualStrokeBrush;
             }
+            textBlockStroke.StrokeThickness = (float)StrokeThickness;
         }
 
         private void DisconnectStrokeVisual()

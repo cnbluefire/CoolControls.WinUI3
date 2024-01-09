@@ -53,9 +53,6 @@ namespace CoolControls.WinUI3.Controls.Internals
             var captureSize = new SizeInt32((int)(Math.Ceiling(size.X)), (int)(Math.Ceiling(size.Y)));
             var captureVisual = visual;
 
-            //RedirectVisual? redirectVisual = null;
-            //ContainerVisual? containerVisual = null;
-
             SpriteVisual? spriteVisual = null;
             CompositionSurfaceBrush? surfaceBrush = null;
             CompositionVisualSurface? visualSurface = null;

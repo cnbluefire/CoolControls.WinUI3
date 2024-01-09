@@ -13,8 +13,8 @@
         <ScrollViewer>
             <StackPanel Margin="40,20,20,20">
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Stroked Text" />
-                
-                <control:TextBlockStrokeView Margin="0,20">
+
+                <control:TextBlockStrokeView Margin="0,20" StrokeThickness="1">
                     <control:TextBlockStrokeView.Resources>
                         <Storyboard x:Name="EffectBrushAnimation" Duration="0:0:1.5" SpeedRatio="0.4" RepeatBehavior="Forever">
                             <ColorAnimationUsingKeyFrames Storyboard.TargetName="Stop1" Storyboard.TargetProperty="Color"
@@ -86,7 +86,7 @@
                                Text="天下皆知美之为美，斯恶已；皆知善之为善，斯不善已。故有无相生，难易相成，长短相形，高下相倾，音声相和，前后相随。"/>
                 </control:TextBlockStrokeView>
                 
-                <control:TextBlockStrokeView Margin="0,20">
+                <control:TextBlockStrokeView Margin="0,20" StrokeThickness="2">
                     <control:TextBlockStrokeView.StrokeBrush>
                         <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
                             <GradientStop Color="#CCFF0000" Offset="0" />
