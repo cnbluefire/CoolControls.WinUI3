@@ -1,4 +1,4 @@
-﻿using CoolControls.WinUI3.Controls.Internals.TextBlockExtensions;
+﻿using CoolControls.WinUI3.Controls.Internals;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -53,6 +53,9 @@ namespace CoolControls.WinUI3.Controls
             sizeBind = compositor.CreateExpressionAnimation("visual.Size");
             sizeBind.SetReferenceParameter("visual", brushHostVisual);
             brushHostVisualSurface.StartAnimation("SourceSize", sizeBind);
+
+            this.Loaded += (s, a) => ConnectStrokeVisual();
+            this.Unloaded += (s, a) => DisconnectStrokeVisual();
         }
 
         private Canvas brushHostCanvas;
@@ -133,6 +136,27 @@ namespace CoolControls.WinUI3.Controls
 
 
 
+        public TextBlockStrokeOptimization Optimization
+        {
+            get { return (TextBlockStrokeOptimization)GetValue(OptimizationProperty); }
+            set { SetValue(OptimizationProperty, value); }
+        }
+
+        public static readonly DependencyProperty OptimizationProperty =
+            DependencyProperty.Register("Optimization", typeof(TextBlockStrokeOptimization), typeof(TextBlockStrokeView), new PropertyMetadata(TextBlockStrokeOptimization.Balanced, (s, a) =>
+            {
+                if (s is TextBlockStrokeView sender && !Equals(a.NewValue, a.OldValue))
+                {
+                    if (sender.textBlockStroke != null)
+                    {
+                        sender.textBlockStroke.Optimization = (TextBlockStrokeOptimization)a.NewValue;
+                    }
+                }
+            }));
+
+
+
+
         public TextBlock TextBlock
         {
             get { return (TextBlock)GetValue(TextBlockProperty); }
@@ -145,18 +169,6 @@ namespace CoolControls.WinUI3.Controls
                 if (s is TextBlockStrokeView sender && !Equals(a.NewValue, a.OldValue))
                 {
                     sender.DisconnectStrokeVisual();
-
-                    if (sender.textBlockStroke != null)
-                    {
-                        sender.textBlockStroke?.Dispose();
-                        sender.textBlockStroke = null;
-                    }
-
-                    if (a.NewValue is TextBlock textBlock)
-                    {
-                        sender.textBlockStroke = new TextBlockStrokeHelper(textBlock);
-                    }
-
                     sender.ConnectStrokeVisual();
                 }
             }));
@@ -174,12 +186,18 @@ namespace CoolControls.WinUI3.Controls
 
         private void ConnectStrokeVisual()
         {
-            if (TextBlockBorder == null || textBlockStroke == null) return;
+            if (TextBlockBorder == null || TextBlock == null) return;
 
-            ElementCompositionPreview.SetElementChildVisual(TextBlockBorder, textBlockStroke.StrokeVisual);
+            if (textBlockStroke == null)
+            {
+                textBlockStroke = new TextBlockStrokeHelper(TextBlock);
+            }
 
+            textBlockStroke.Optimization = Optimization;
             textBlockStroke.StrokeBrush = actualStrokeBrush;
             textBlockStroke.StrokeThickness = (float)StrokeThickness;
+
+            ElementCompositionPreview.SetElementChildVisual(TextBlockBorder, textBlockStroke.StrokeVisual);
         }
 
         private void DisconnectStrokeVisual()
@@ -191,6 +209,8 @@ namespace CoolControls.WinUI3.Controls
             if (textBlockStroke != null)
             {
                 textBlockStroke.StrokeBrush = null;
+                textBlockStroke.Dispose();
+                textBlockStroke = null;
             }
         }
 

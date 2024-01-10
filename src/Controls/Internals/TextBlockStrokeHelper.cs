@@ -21,7 +21,7 @@ using Windows.UI;
 using Windows.UI.Text;
 using WinRT;
 
-namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
+namespace CoolControls.WinUI3.Controls.Internals
 {
     internal class TextBlockStrokeHelper : IDisposable
     {
@@ -29,12 +29,12 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
 
         private bool disposedValue;
 
-        private ICollection<IDisposable> disposableObjects;
+        private DisposableCollector disposableCollector;
         private WeakReference<TextBlock> weakTextBlock;
         private float strokeThickness = 0f;
+        private TextBlockStrokeOptimization optimization = TextBlockStrokeOptimization.Balanced;
 
         private Compositor compositor;
-        private Queue<SpriteVisual> cachedVisuals;
         private ContainerVisual strokeVisualForSurface;
         private CompositionVisualSurface strokeVisualSurface;
         private CompositionSurfaceBrush strokeVisualSurfaceBrush;
@@ -54,79 +54,78 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
 
         public TextBlockStrokeHelper(TextBlock textBlock)
         {
-            disposableObjects = new DisposableObjects();
-            cachedVisuals = new Queue<SpriteVisual>();
+            disposableCollector = new DisposableCollector();
 
             weakTextBlock = new WeakReference<TextBlock>(textBlock);
 
-            textBlock.Loaded += (new WeakEventListener<TextBlock, object, RoutedEventArgs>(textBlock)
+            textBlock.Loaded += new WeakEventListener<TextBlock, object, RoutedEventArgs>(textBlock)
             {
                 OnEventAction = (i, s, a) => UpdateStrokeState(),
                 OnDetachAction = i => textBlock.Loaded -= i.OnEvent
-            }).OnEvent;
+            }.OnEvent;
 
-            textBlock.Unloaded += (new WeakEventListener<TextBlock, object, RoutedEventArgs>(textBlock)
+            textBlock.Unloaded += new WeakEventListener<TextBlock, object, RoutedEventArgs>(textBlock)
             {
                 OnEventAction = (i, s, a) => UpdateStrokeState(),
                 OnDetachAction = i => textBlock.Unloaded -= i.OnEvent
-            }).OnEvent;
+            }.OnEvent;
 
-            textBlock.SizeChanged += (new WeakEventListener<TextBlock, object, SizeChangedEventArgs>(textBlock)
+            textBlock.SizeChanged += new WeakEventListener<TextBlock, object, SizeChangedEventArgs>(textBlock)
             {
                 OnEventAction = (i, s, a) => UpdateStrokeState(),
                 OnDetachAction = i => textBlock.SizeChanged -= i.OnEvent
-            }).OnEvent;
+            }.OnEvent;
 
             var textBlockVisual = textBlock.GetVisualInternal();
             compositor = textBlockVisual.Compositor;
 
             sizeBind = compositor.CreateExpressionAnimation("visual.Size")
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             sizeBind.SetReferenceParameter("visual", textBlockVisual);
 
             surfaceSizeBind = compositor.CreateExpressionAnimation($"Vector2(visual.Size.X + {padding * 2}, visual.Size.Y + {padding * 2})")
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             surfaceSizeBind.SetReferenceParameter("visual", textBlockVisual);
 
             strokeBrushVisual = compositor.CreateSpriteVisual()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             strokeBrushVisual.Offset = new Vector3(-padding, -padding, 0);
             strokeBrushVisual.StartAnimation("Size", surfaceSizeBind);
 
             rootVisual = compositor.CreateContainerVisual()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             rootVisual.StartAnimation("Size", sizeBind);
 
             textBlockAlphaMask = (CompositionSurfaceBrush)textBlock.GetAlphaMask();
 
             alphaMaskSurfaceVisual = compositor.CreateSpriteVisual()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             alphaMaskSurfaceVisual.Brush = textBlockAlphaMask;
             alphaMaskSurfaceVisual.StartAnimation("Size", sizeBind);
 
             alphaMaskSurface = compositor.CreateVisualSurface()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             alphaMaskSurface.SourceVisual = alphaMaskSurfaceVisual;
             alphaMaskSurface.StartAnimation("SourceSize", sizeBind);
 
             alphaMaskSurfaceBrush = compositor.CreateSurfaceBrush(alphaMaskSurface)
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             alphaMaskSurfaceBrush.HorizontalAlignmentRatio = 0;
             alphaMaskSurfaceBrush.VerticalAlignmentRatio = 0;
             alphaMaskSurfaceBrush.Stretch = CompositionStretch.None;
 
             strokeVisualForSurface = compositor.CreateContainerVisual()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             strokeVisualForSurface.StartAnimation("Size", sizeBind);
 
             strokeVisualSurface = compositor.CreateVisualSurface()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             strokeVisualSurface.SourceVisual = strokeVisualForSurface;
             strokeVisualSurface.StartAnimation("SourceSize", surfaceSizeBind);
             strokeVisualSurface.SourceOffset = new Vector2(-padding, -padding);
 
             strokeVisualSurfaceBrush = compositor.CreateSurfaceBrush(strokeVisualSurface)
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             strokeVisualSurfaceBrush.HorizontalAlignmentRatio = 0;
             strokeVisualSurfaceBrush.VerticalAlignmentRatio = 0;
             strokeVisualSurfaceBrush.Stretch = CompositionStretch.None;
@@ -144,7 +143,7 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
                 {
                     new CompositionEffectSourceParameter("visualSurface"),
                     transform2dEffect
-                }
+                },
             };
 
             using var alphaMaskEffect = new AlphaMaskEffect()
@@ -154,7 +153,7 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
             };
 
             strokeEffectBrush = compositor.CreateEffectFactory(alphaMaskEffect).CreateBrush()
-                .AddToDisposableObjects(disposableObjects);
+                .TraceDisposable(disposableCollector);
             strokeEffectBrush.SetSourceParameter("visualSurface", strokeVisualSurfaceBrush);
             strokeEffectBrush.SetSourceParameter("alphaMask", alphaMaskSurfaceBrush);
             strokeEffectBrush.SetSourceParameter("source", null);
@@ -194,6 +193,20 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
             }
         }
 
+        internal TextBlockStrokeOptimization Optimization
+        {
+            get => optimization;
+            set
+            {
+                if (optimization != value)
+                {
+                    optimization = value;
+
+                    UpdateStrokeState(true);
+                }
+            }
+        }
+
         public Visual StrokeVisual => rootVisual;
 
         private bool IsStrokeEnabled =>
@@ -227,13 +240,20 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
         {
             if (disposedValue) return;
 
+            var optimization = this.optimization;
+
+            float unitOffset = optimization == TextBlockStrokeOptimization.Quality ?
+                0.5f : 1;
+            var unitVisualCount = optimization == TextBlockStrokeOptimization.Speed ?
+                4 : 8;
+
             int visualCount = 0;
 
             var thickness = Math.Clamp(strokeThickness, 0, 6);
 
             if (IsStrokeEnabled)
             {
-                visualCount = (int)Math.Ceiling(thickness) * 8;
+                visualCount = (int)Math.Ceiling(thickness / unitOffset) * unitVisualCount;
             }
 
             if (!forceUpdate && visualCount == strokeVisualForSurface.Children.Count) return;
@@ -244,22 +264,15 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
                 strokeVisualForSurface.Children.Remove(visual);
                 visual.StopAnimation("Size");
                 visual.Brush = null;
-                cachedVisuals.Enqueue(visual);
+                SpriteVisualPool.Instance.Return(visual);
             }
 
             while (strokeVisualForSurface.Children.Count < visualCount)
             {
-                SpriteVisual visual;
-                if (cachedVisuals.Count > 0)
-                {
-                    visual = cachedVisuals.Dequeue();
-                }
-                else
-                {
-                    visual = compositor.CreateSpriteVisual().AddToDisposableObjects(disposableObjects);
-                    visual.StartAnimation("Size", sizeBind);
-                    visual.Brush = alphaMaskSurfaceBrush;
-                }
+                var visual = SpriteVisualPool.Instance.GetOrCreate();
+
+                visual.StartAnimation("Size", sizeBind);
+                visual.Brush = alphaMaskSurfaceBrush;
 
                 strokeVisualForSurface.Children.InsertAtTop(visual);
             }
@@ -267,21 +280,36 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
             int index = 0;
             foreach (var visual in strokeVisualForSurface.Children)
             {
-                var offset = Math.Min(index / 8f, thickness);
+                var progress = index / unitVisualCount + 1;
+                var offset = Math.Min(progress * unitOffset, thickness);
 
-                switch (index % 8)
+                if (unitVisualCount == 4)
                 {
-                    case 0: visual.Offset = new Vector3(-offset, -offset, 0); break;
-                    case 1: visual.Offset = new Vector3(0, -offset, 0); break;
-                    case 2: visual.Offset = new Vector3(offset, -offset, 0); break;
-
-                    case 3: visual.Offset = new Vector3(-offset, 0, 0); break;
-                    case 4: visual.Offset = new Vector3(offset, 0, 0); break;
-
-                    case 5: visual.Offset = new Vector3(-offset, offset, 0); break;
-                    case 6: visual.Offset = new Vector3(0, offset, 0); break;
-                    case 7: visual.Offset = new Vector3(offset, offset, 0); break;
+                    switch (index % 4)
+                    {
+                        case 0: visual.Offset = new Vector3(-offset, -offset, 0); break;
+                        case 1: visual.Offset = new Vector3(offset, -offset, 0); break;
+                        case 2: visual.Offset = new Vector3(-offset, offset, 0); break;
+                        case 3: visual.Offset = new Vector3(offset, offset, 0); break;
+                    }
                 }
+                else if (unitVisualCount == 8)
+                {
+                    switch (index % 8)
+                    {
+                        case 0: visual.Offset = new Vector3(-offset, -offset, 0); break;
+                        case 1: visual.Offset = new Vector3(0, -offset, 0); break;
+                        case 2: visual.Offset = new Vector3(offset, -offset, 0); break;
+
+                        case 3: visual.Offset = new Vector3(-offset, 0, 0); break;
+                        case 4: visual.Offset = new Vector3(offset, 0, 0); break;
+
+                        case 5: visual.Offset = new Vector3(-offset, offset, 0); break;
+                        case 6: visual.Offset = new Vector3(0, offset, 0); break;
+                        case 7: visual.Offset = new Vector3(offset, offset, 0); break;
+                    }
+                }
+
 
                 index++;
             }
@@ -291,85 +319,28 @@ namespace CoolControls.WinUI3.Controls.Internals.TextBlockExtensions
         {
             if (!disposedValue)
             {
-
-
-
-                disposedValue = true;
-            }
-        }
-    }
-
-    file class DisposableObjects : ICollection<IDisposable>, IDisposable
-    {
-        private bool disposedValue;
-
-        private List<IDisposable> objects = new List<IDisposable>();
-
-        public void Add(IDisposable item)
-        {
-            objects.Add(item);
-        }
-
-        #region NotImplemented
-
-        public int Count => throw new NotImplementedException();
-
-        public bool IsReadOnly => throw new NotImplementedException();
-
-        public void Clear()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(IDisposable item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CopyTo(IDisposable[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion NotImplemented
-
-        public void Dispose()
-        {
-            if (!disposedValue)
-            {
-                var objects = Interlocked.Exchange(ref this.objects, null!);
-
-                for (int i = objects.Count - 1; i >= 0; i--)
+                if (strokeVisualForSurface.Children.Count > 0)
                 {
-                    objects[i].Dispose();
+                    var visuals = strokeVisualForSurface.Children.ToArray();
+                    strokeVisualForSurface.Children.RemoveAll();
+
+                    for (int i = 0; i < visuals.Length; i++)
+                    {
+                        SpriteVisualPool.Instance.Return((SpriteVisual)visuals[i]);
+                    }
                 }
 
+                ((IDisposable)disposableCollector).Dispose();
+
                 disposedValue = true;
             }
         }
-
-        public IEnumerator<IDisposable> GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove(IDisposable item)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
     }
 
-    file static class DisposableObjectsExtensions
+    public enum TextBlockStrokeOptimization
     {
-        public static T AddToDisposableObjects<T>(this T obj, ICollection<IDisposable> disposableObjects) where T : IDisposable
-        {
-            disposableObjects.Add(obj);
-            return obj;
-        }
+        Speed,
+        Balanced,
+        Quality
     }
 }

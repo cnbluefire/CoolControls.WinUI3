@@ -15,14 +15,12 @@ using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
 
-namespace CoolControls.WinUI3.Controls
+namespace CoolControls.WinUI3.Controls.Internals
 {
     internal class RibbedGlassVisualHelper : IDisposable
     {
-        private const int MaxPoolSize = 100;
         private static volatile int instanceCount = 0;
         private static object globalLocker = new object();
-        private static System.Collections.Concurrent.ConcurrentBag<ChildVisualEntry>? childVisualPool;
 
         private bool disposedValue;
         private DisposableCollector disposables = new DisposableCollector();
@@ -383,7 +381,7 @@ namespace CoolControls.WinUI3.Controls
             int visualCount = 0;
 
             var childVisualWidth = ChildVisualWidth;
-            var sourceVisualScale = this.SourceVisualScale;
+            var sourceVisualScale = SourceVisualScale;
 
             if (width > 0 && height > 0 && sourceVisual != null)
             {
@@ -404,12 +402,12 @@ namespace CoolControls.WinUI3.Controls
                 entry.Brush.Properties.InsertScalar("_Index", -1);
                 entry.Brush.Surface = null;
 
-                ReturnChildVisualEntry(ref entry);
+                entry.Dispose();
             }
 
             while (usedChildVisual.Count < visualCount)
             {
-                var entry = RentChildVisualEntry(compositor);
+                var entry = CreateChildVisualEntry(compositor);
                 entry.Visual.Properties.InsertScalar("_Index", usedChildVisual.Count);
                 entry.Brush.Properties.InsertScalar("_Index", usedChildVisual.Count);
 
@@ -427,7 +425,7 @@ namespace CoolControls.WinUI3.Controls
 
         private static ChildVisualEntry CreateChildVisualEntry(Compositor compositor)
         {
-            var visual = compositor.CreateSpriteVisual();
+            var visual = SpriteVisualPool.Instance.GetOrCreate();
 
             var brush = compositor.CreateSurfaceBrush();
             brush.Stretch = CompositionStretch.None;
@@ -457,28 +455,6 @@ namespace CoolControls.WinUI3.Controls
 
                     disposables.Dispose();
                     disposables = null!;
-
-                    if (_instanceCount == 0)
-                    {
-                        if (childVisualPool != null)
-                        {
-                            var pool = Interlocked.Exchange(ref childVisualPool, null);
-
-                            if (disposing)
-                            {
-                                if (pool != null)
-                                {
-                                    var arr = pool.ToArray();
-
-                                    for (int i = 0; i < arr.Length; i++)
-                                    {
-                                        arr[i].Dispose();
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                 }
 
             }
@@ -495,63 +471,25 @@ namespace CoolControls.WinUI3.Controls
             GC.SuppressFinalize(this);
         }
 
-
-        private static ChildVisualEntry RentChildVisualEntry(Compositor compositor)
-        {
-            var pool = childVisualPool;
-            if (pool != null && pool.TryTake(out var value))
-            {
-                return value;
-            }
-
-            return CreateChildVisualEntry(compositor);
-        }
-
-        private static void ReturnChildVisualEntry(ref ChildVisualEntry? entry)
-        {
-            if (entry == null) return;
-
-            var _entry = entry;
-            entry = null;
-
-            lock (globalLocker)
-            {
-                var pool = childVisualPool;
-                if (pool == null)
-                {
-                    childVisualPool = new System.Collections.Concurrent.ConcurrentBag<ChildVisualEntry>();
-                    pool = childVisualPool;
-                }
-
-                if (pool.Count < MaxPoolSize)
-                {
-                    pool.Add(_entry);
-                    return;
-                }
-            }
-
-            _entry.Dispose();
-        }
-
         private class ChildVisualEntry : IDisposable
         {
             private bool disposedValue;
 
-            public ChildVisualEntry(Visual visual, CompositionSurfaceBrush brush)
+            public ChildVisualEntry(SpriteVisual visual, CompositionSurfaceBrush brush)
             {
                 Visual = visual;
                 Brush = brush;
             }
 
-            public Visual Visual { get; private set; }
+            public SpriteVisual Visual { get; private set; }
 
             public CompositionSurfaceBrush Brush { get; private set; }
 
-            protected virtual void Dispose(bool disposing)
+            public void Dispose()
             {
                 if (!disposedValue)
                 {
-                    Visual?.Dispose();
+                    SpriteVisualPool.Instance.Return(Visual);
                     Visual = null!;
 
                     Brush?.Dispose();
@@ -560,132 +498,6 @@ namespace CoolControls.WinUI3.Controls
                     disposedValue = true;
                 }
             }
-
-            public void Dispose()
-            {
-                Dispose(disposing: true);
-                GC.SuppressFinalize(this);
-            }
         }
-
-        private class DisposableCollector : IDisposable, ICollection<IDisposable>
-        {
-            private bool disposedValue;
-
-            private List<IDisposable>? objects = new List<IDisposable>();
-
-            public int Count
-            {
-                get
-                {
-                    ThrowIfDisposed();
-
-                    return objects!.Count;
-                }
-            }
-
-            public bool IsReadOnly => false;
-
-            public void Add(IDisposable obj)
-            {
-                ThrowIfDisposed();
-
-                if (obj != null)
-                {
-                    objects!.Add(obj);
-                }
-            }
-
-            public bool Remove(IDisposable obj)
-            {
-                ThrowIfDisposed();
-
-                if (obj != null)
-                {
-                    return objects!.Remove(obj);
-                }
-
-                return false;
-            }
-
-            private void ThrowIfDisposed()
-            {
-                if (disposedValue) throw new ObjectDisposedException(nameof(DisposableCollector));
-            }
-
-            public void Clear()
-            {
-                ThrowIfDisposed();
-                objects!.Clear();
-            }
-
-            public bool Contains(IDisposable item)
-            {
-                ThrowIfDisposed();
-                return objects!.Contains(item);
-            }
-
-            public void CopyTo(IDisposable[] array, int arrayIndex)
-            {
-                ThrowIfDisposed();
-                objects!.CopyTo(array, arrayIndex);
-            }
-
-            public IEnumerator<IDisposable> GetEnumerator()
-            {
-                ThrowIfDisposed();
-                return objects!.GetEnumerator();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                ThrowIfDisposed();
-                return ((IEnumerable)objects!).GetEnumerator();
-
-            }
-
-            protected virtual void Dispose(bool disposing)
-            {
-                if (!disposedValue)
-                {
-                    disposedValue = true;
-
-                    var objects = Interlocked.Exchange(ref this.objects, null);
-
-                    if (objects != null)
-                    {
-                        for (int i = objects.Count - 1; i >= 0; i--)
-                        {
-                            try
-                            {
-                                objects[i].Dispose();
-                            }
-                            catch { }
-                        }
-                    }
-                }
-            }
-
-            public void Dispose()
-            {
-                Dispose(disposing: true);
-                GC.SuppressFinalize(this);
-            }
-        }
-    }
-
-    file static class DisposableExtensions
-    {
-        [return: NotNullIfNotNull(nameof(obj))]
-        internal static T? TraceDisposable<T>(this T? obj, ICollection<IDisposable>? disposableCollector) where T : class, IDisposable
-        {
-            if (obj != null && disposableCollector != null)
-            {
-                disposableCollector.Add(obj);
-            }
-
-            return obj;
-        }
-
     }
 }

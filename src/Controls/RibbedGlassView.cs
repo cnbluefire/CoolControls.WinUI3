@@ -1,4 +1,5 @@
-﻿using Microsoft.Graphics.Canvas.Effects;
+﻿using CoolControls.WinUI3.Controls.Internals;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
